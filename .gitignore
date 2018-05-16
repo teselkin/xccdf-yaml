@@ -1,0 +1,8 @@
+.eggs/
+.idea/
+build/
+venv/
+*.egg-info/
+*.pyc
+AUTHORS
+ChangeLog
