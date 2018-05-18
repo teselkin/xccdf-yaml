@@ -26,12 +26,7 @@ class CliAboutParser(Command):
 
     def take_action(self, parsed_args):
         cls = PARSERS.get(parsed_args.name)
-        about = getattr(cls, 'about')
-        if about is None:
-            about_str = ''
-        else:
-            about_str = about()
-        print(about_str)
+        print(cls.about())
 
 
 class CliListParsers(Lister):
@@ -41,10 +36,5 @@ class CliListParsers(Lister):
         cols = ('Name', 'About')
         rows = []
         for cls in PARSERS:
-            about = getattr(cls, 'about')
-            if about is None:
-                about_str = ''
-            else:
-                about_str = about()
-            rows.append((cls.name(), about_str))
+            rows.append((cls.name(), cls.about()))
         return cols, rows

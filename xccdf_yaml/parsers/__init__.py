@@ -13,6 +13,10 @@ class GenericParser(object):
     def name(cls):
         return cls.__id__
 
+    @classmethod
+    def about(cls):
+        return ''
+
 
 class ClassLoader(object):
     def __init__(self):
