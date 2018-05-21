@@ -3,18 +3,19 @@ import datetime
 
 from xccdf_yaml.xml import XmlCommon
 
+NSMAP = {
+    None: "http://oval.mitre.org/XMLSchema/oval-definitions-5",
+    'oval-common': "http://oval.mitre.org/XMLSchema/oval-common-5",
+    'oval-def-indep': "http://oval.mitre.org/XMLSchema/oval-definitions-5#independent",
+    'oval-def-linux': "http://oval.mitre.org/XMLSchema/oval-definitions-5#linux",
+    'oval-def-unix': "http://oval.mitre.org/XMLSchema/oval-definitions-5#unix",
+    'xsi': "http://www.w3.org/2001/XMLSchema-instance",
+}
+
 
 class XmlBase(XmlCommon):
     def __init__(self, name, ns=None):
-        nsmap = {
-            None: "http://oval.mitre.org/XMLSchema/oval-definitions-5",
-            'oval-common': "http://oval.mitre.org/XMLSchema/oval-common-5",
-            'oval-def-indep': "http://oval.mitre.org/XMLSchema/oval-definitions-5#independent",
-            'oval-def-linux': "http://oval.mitre.org/XMLSchema/oval-definitions-5#linux",
-            'oval-def-unix': "http://oval.mitre.org/XMLSchema/oval-definitions-5#unix",
-            'xsi': "http://www.w3.org/2001/XMLSchema-instance",
-        }
-        super().__init__(name, ns=ns, nsmap=nsmap)
+        super().__init__(name, ns=ns, nsmap=NSMAP)
 
 
 class OvalDefinitions(XmlBase):
