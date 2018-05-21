@@ -13,6 +13,7 @@ class XCCDF_YAML_Manager(CommandManager):
         'about-parser': cli.CliAboutParser,
         'list-parsers': cli.CliListParsers,
         'test-xccdf': cli.CliTestXccdf,
+        'test-oval': cli.CliTestOval,
     }
 
     def load_commands(self, namespace):
