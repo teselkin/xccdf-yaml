@@ -12,6 +12,7 @@ class XCCDF_YAML_Manager(CommandManager):
         'convert': cli.CliConvertYamlToXccdf,
         'about-parser': cli.CliAboutParser,
         'list-parsers': cli.CliListParsers,
+        'test-xccdf': cli.CliTestXccdf,
     }
 
     def load_commands(self, namespace):
