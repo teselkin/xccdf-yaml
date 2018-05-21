@@ -27,18 +27,38 @@ class CliTestXccdf(Command):
         return parser
 
     def take_action(self, parsed_args):
-        # rule = BenchmarkRule()
-        # check = rule.add_check()
-        # check.check_content_ref(href="mos-ubuntu1604-oval.xml",
-        #                         name="oval:mos-bin_dash_has_mode_0755:def:1")
-        # check = rule.add_check(namespace='sce')
-        # check.check_import({'import-name': 'stdout'})
-        # check.check_content_ref(href='bin/test_true.sh')
-        # return str(rule)
-
         benchmark = Benchmark('test_benchmark')
         benchmark.set_description('<b>Description</b>')
         benchmark.add_platform('cpe:/o:canonical:ubuntu_linux:16.04')
+
+        profile = benchmark.add_profile('mos')
+        profile.set_title('Mirantis uberprofile')
+
+        group = benchmark.add_group('common')
+        rule = group.add_rule('etc_os_release_does_not_match_Xerus')
+        check = rule.add_check()
+        check.check_content_ref(href="mos-ubuntu1604-oval.xml",
+                                name="oval:mos-etc_os_release_does_not_match_Xerus:def:1")
+        profile.add_rule(rule, selected=True)
+
+        rule = group.add_rule('bin_dash_has_mode_0755')
+        check = rule.add_check()
+        check.check_content_ref(href="mos-ubuntu1604-oval.xml",
+                                name="oval:mos-bin_dash_has_mode_0755:def:1")
+        profile.add_rule(rule, selected=True)
+
+        rule = group.add_rule('aide_is_installed')
+        check = rule.add_check()
+        check.check_content_ref(href="mos-ubuntu1604-oval.xml",
+                                name="oval:mos-aide_is_installed:def:1")
+        profile.add_rule(rule, selected=True)
+
+        rule = group.add_rule('sysctl_vm_laptop_mode_1')
+        check = rule.add_check()
+        check.check_content_ref(href="mos-ubuntu1604-oval.xml",
+                                name="oval:mos-sysctl_vm_laptop_mode_1:def:1")
+        profile.add_rule(rule, selected=True)
+
         return str(benchmark)
 
 

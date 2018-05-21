@@ -18,6 +18,9 @@ class XmlBase(object):
         namespace = ns or self.default_ns
         return etree.QName(NSMAP[namespace], name)
 
+    def sub_element(self, *args, **kwargs):
+        return etree.SubElement(self._, self.tag(*args, **kwargs))
+
     def set_attr(self, name, value):
         self._.set(name, value)
 
@@ -29,59 +32,98 @@ class Benchmark(XmlBase):
     def __init__(self, id, version='0.1', title=None, status='draft',
                  status_date=None):
         super().__init__('Benchmark')
-
+        self.id = id
         self.set_attr('id', id)
 
-        status_element = etree.SubElement(self._, self.tag('status'))
+        status_element = self.sub_element('status')
         status_element.text = status
         if status_date is not None:
             status_element.set('date', status_date)
 
-        version_element = etree.SubElement(self._, self.tag('version'))
+        version_element = self.sub_element('version')
         version_element.text = version
 
         if title is not None:
             self.set_title(title)
 
     def set_title(self, text):
-        title = etree.SubElement(self._, self.tag('title'))
+        title = self.sub_element('title')
         title.text = text
 
     def set_description(self, text):
-        description = etree.SubElement(self._, self.tag('description'))
+        description = self.sub_element('description')
         description.text = text
 
     def add_platform(self, name):
-        platform = etree.SubElement(self._, self.tag('platform'))
+        platform = self.sub_element('platform')
         platform.set('idref', name)
+
+    def add_profile(self, id):
+        profile = BenchmarkProfile(id)
+        self._.append(profile._)
+        return profile
+
+    def add_group(self, id):
+        group = BenchmarkGroup(id)
+        self._.append(group._)
+        return group
 
 
 class BenchmarkProfile(XmlBase):
-    def __init__(self):
+    def __init__(self, id):
         super().__init__('Profile')
-        pass
+        self.id = id
+        self.set_attr('id', id)
 
-    def xml(self):
-        pass
+    def set_title(self, text):
+        title = self.sub_element('title')
+        title.text = text
+
+    def set_description(self, text):
+        description = self.sub_element('description')
+        description.text = text
+
+    def add_rule(self, rule, selected=False):
+        select_element = self.sub_element('select')
+        select_element.set('idref', rule.id)
+        select_element.set('selected', str(selected))
 
 
 class BenchmarkGroup(XmlBase):
-    def __init__(self):
+    def __init__(self, id):
         super().__init__('Group')
+        self.id = id
+        self.set_attr('id', id)
 
-    def xml(self):
-        pass
+    def set_title(self, text):
+        title = self.sub_element('title')
+        title.text = text
+
+    def set_description(self, text):
+        description = self.sub_element('description')
+        description.text = text
+
+    def add_rule(self, id):
+        rule = BenchmarkRule(id)
+        self._.append(rule._)
+        return rule
 
 
 class BenchmarkRule(XmlBase):
-    def __init__(self):
+    def __init__(self, id, selected=False, severity='medium'):
         super().__init__('Rule')
-        self.title = ''
-        self.description = ''
-        self.xml()
+        self.id = id
+        self.set_attr('id', id)
+        self.set_attr('selected', str(selected))
+        self.set_attr('severity', severity)
 
-    def xml(self):
-        pass
+    def set_title(self, text):
+        title = self.sub_element('title')
+        title.text = text
+
+    def set_description(self, text):
+        description = self.sub_element('description')
+        description.text = text
 
     def add_check(self, **kwargs):
         check = XccdfCheck(**kwargs)
@@ -106,13 +148,13 @@ class XccdfCheck(XmlBase):
     def check_import(self, *args, **kwargs):
         attrs = dict(zip(('attrs',), args)).get('attrs', {})
         attrs.update(kwargs)
-        element = etree.SubElement(self._, self.tag('check-import'))
+        element = self.sub_element('check-import')
         for key, value in attrs.items():
             element.set(key, value)
 
     def check_content_ref(self, *args, **kwargs):
         attrs = dict(zip(('attrs',), args)).get('attrs', {})
         attrs.update(kwargs)
-        element = etree.SubElement(self._, self.tag('check-content-ref'))
+        element = self.sub_element('check-content-ref')
         for key, value in attrs.items():
             element.set(key, value)
