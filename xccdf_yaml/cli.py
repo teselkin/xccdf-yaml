@@ -8,16 +8,21 @@ from xccdf_yaml.xccdf import Benchmark
 
 from xccdf_yaml.oval import OvalDefinitions
 
+from xccdf_yaml.actions import ConvertYamlAction
 
-class CliConvertYamlToXccdf(Command):
+
+class CliConvertYaml(Command):
     log = logging.getLogger(__name__)
 
     def get_parser(self, prog_name):
         parser = super().get_parser(prog_name)
+        parser.add_argument('filename')
+        parser.add_argument('--output-dir', default='output')
         return parser
 
     def take_action(self, parsed_args):
-        print('Hello World!')
+        action = ConvertYamlAction()
+        return action.take_action(parsed_args)
 
 
 class CliTestXccdf(Command):
@@ -29,6 +34,7 @@ class CliTestXccdf(Command):
 
     def take_action(self, parsed_args):
         benchmark = Benchmark('test_benchmark')\
+            .set_title('Title')\
             .set_description('<b>Description</b>')
         benchmark.add_platform('cpe:/o:canonical:ubuntu_linux:16.04')
 
@@ -40,25 +46,25 @@ class CliTestXccdf(Command):
         check = rule.add_check()
         check.check_content_ref(href="mos-ubuntu1604-oval.xml",
                                 name="oval:mos-etc_os_release_does_not_match_Xerus:def:1")
-        profile.add_rule(rule, selected=True)
+        profile.append_rule(rule, selected=True)
 
         rule = group.add_rule('bin_dash_has_mode_0755')
         check = rule.add_check()
         check.check_content_ref(href="mos-ubuntu1604-oval.xml",
                                 name="oval:mos-bin_dash_has_mode_0755:def:1")
-        profile.add_rule(rule, selected=True)
+        profile.append_rule(rule, selected=True)
 
         rule = group.add_rule('aide_is_installed')
         check = rule.add_check()
         check.check_content_ref(href="mos-ubuntu1604-oval.xml",
                                 name="oval:mos-aide_is_installed:def:1")
-        profile.add_rule(rule, selected=True)
+        profile.append_rule(rule, selected=True)
 
         rule = group.add_rule('sysctl_vm_laptop_mode_1')
         check = rule.add_check()
         check.check_content_ref(href="mos-ubuntu1604-oval.xml",
                                 name="oval:mos-sysctl_vm_laptop_mode_1:def:1")
-        profile.add_rule(rule, selected=True)
+        profile.append_rule(rule, selected=True)
 
         return str(benchmark)
 
@@ -341,6 +347,7 @@ class CliTestOval(Command):
                 'id': "oval:mos-sysctl_vm_laptop_mode_1:obj:1",
                 'version': "1",
             })
+        obj.sub_element('name').set_text('vm.laptop.mode')
         test.add_object(obj)
 
         """

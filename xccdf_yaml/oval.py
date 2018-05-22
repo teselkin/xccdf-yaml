@@ -19,6 +19,14 @@ class XmlBase(XmlCommon):
 
 
 class OvalDefinitions(XmlBase):
+    __elements_order__ = (
+        'generator',
+        'definitions',
+        'tests',
+        'objects',
+        'states',
+    )
+
     def __init__(self):
         super().__init__('oval_definitions')
         generator = Generator()
@@ -92,10 +100,10 @@ class Metadata(XmlBase):
 
     def set_affected(self, family, platform):
         affected = None
-        for affected in self._.findall('affected'):
-            if affected.get('family') == family:
-                for x in affected.findall('platform'):
-                    if x.text == platform:
+        for affected in self.elements('affected'):
+            if affected.get_attr('family') == family:
+                for x in affected.elements('platform'):
+                    if x._text == platform:
                         return self
                 break
 
