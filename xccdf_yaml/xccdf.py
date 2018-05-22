@@ -18,14 +18,18 @@ class XmlBase(XmlCommon):
 
 
 class Benchmark(XmlBase):
-    __elements_order__ = [
+    __elements_order__ = (
         'status',
-        'version',
         'title',
         'description',
         'platform',
+        'version',
+        'metadata',
         'Profile',
-    ]
+        'Group',
+        'Value',
+        'Rule',
+    )
 
     def __init__(self, id, version='0.1', status='draft', status_date=None):
         super().__init__('Benchmark')
@@ -51,7 +55,7 @@ class Benchmark(XmlBase):
         self.sub_element('version').set_text(version)
 
     def add_platform(self, name):
-        self.sub_element('platform').set_text(name)
+        self.sub_element('platform').set_attr('idref', name)
         return self
 
     def add_profile(self, id):
@@ -66,6 +70,12 @@ class Benchmark(XmlBase):
 
 
 class BenchmarkProfile(XmlBase):
+    __elements_order__ = (
+        'title',
+        'description',
+        'select',
+    )
+
     def __init__(self, id):
         super().__init__('Profile')
         self.set_attr('id', id)
@@ -81,7 +91,7 @@ class BenchmarkProfile(XmlBase):
     def append_rule(self, rule, selected=False):
         self.sub_element('select').set_attrs({
             'idref': rule.get_attr('id'),
-            'selected': str(selected)
+            'selected': {True: '1', False: '0'}.get(selected, '0')
         })
         return self
 
@@ -115,7 +125,7 @@ class BenchmarkRule(XmlBase):
         self.set_attrs({
             'id': id,
             'severity': severity,
-            'selected': str(selected),
+            'selected': {True: '1', False: '0'}.get(selected, '0'),
         })
 
     def set_title(self, text):

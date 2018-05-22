@@ -30,7 +30,6 @@ class XmlCommon(object):
 
     def append(self, element):
         self._children.setdefault(element._name, []).append(element)
-        print(self._children)
         return element
 
     def sub_element(self, name, ns=None):
