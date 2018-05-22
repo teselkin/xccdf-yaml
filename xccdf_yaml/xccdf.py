@@ -1,5 +1,8 @@
 import lxml.etree as etree
 
+from xccdf_yaml.xml import XmlCommon
+
+
 NSMAP = {
     None: "http://checklists.nist.gov/xccdf/1.1",
     'oval-def': "http://oval.mitre.org/XMLSchema/oval-definitions-5",
@@ -9,23 +12,9 @@ NSMAP = {
 }
 
 
-class XmlBase(object):
-    def __init__(self, name, default_ns=None):
-        self.default_ns = default_ns
-        self._ = etree.Element(self.tag(name), nsmap=NSMAP)
-
-    def tag(self, name, ns=None):
-        namespace = ns or self.default_ns
-        return etree.QName(NSMAP[namespace], name)
-
-    def sub_element(self, *args, **kwargs):
-        return etree.SubElement(self._, self.tag(*args, **kwargs))
-
-    def set_attr(self, name, value):
-        self._.set(name, value)
-
-    def __str__(self):
-        return etree.tostring(self._, pretty_print=True).decode()
+class XmlBase(XmlCommon):
+    def __init__(self, name, ns=None):
+        super().__init__(name, ns=ns, nsmap=NSMAP)
 
 
 class Benchmark(XmlBase):
@@ -35,37 +24,35 @@ class Benchmark(XmlBase):
         self.id = id
         self.set_attr('id', id)
 
-        status_element = self.sub_element('status')
-        status_element.text = status
+        status_element = self.sub_element('status').set_text(status)
         if status_date is not None:
-            status_element.set('date', status_date)
+            status_element.set_attr('date', status_date)
 
-        version_element = self.sub_element('version')
-        version_element.text = version
+        self.sub_element('version').set_text(version)
 
         if title is not None:
             self.set_title(title)
 
     def set_title(self, text):
-        title = self.sub_element('title')
-        title.text = text
+        self.sub_element('title').set_text(text)
+        return self
 
     def set_description(self, text):
-        description = self.sub_element('description')
-        description.text = text
+        self.sub_element('description').set_text(text)
+        return self
 
     def add_platform(self, name):
-        platform = self.sub_element('platform')
-        platform.set('idref', name)
+        self.sub_element('platform').set_attr('idref', name)
+        return self
 
     def add_profile(self, id):
         profile = BenchmarkProfile(id)
-        self._.append(profile._)
+        self.append(profile)
         return profile
 
     def add_group(self, id):
         group = BenchmarkGroup(id)
-        self._.append(group._)
+        self.append(group)
         return group
 
 
@@ -76,17 +63,17 @@ class BenchmarkProfile(XmlBase):
         self.set_attr('id', id)
 
     def set_title(self, text):
-        title = self.sub_element('title')
-        title.text = text
+        self.sub_element('title').set_text(text)
+        return self
 
     def set_description(self, text):
-        description = self.sub_element('description')
-        description.text = text
+        self.sub_element('description').set_text(text)
+        return self
 
     def add_rule(self, rule, selected=False):
-        select_element = self.sub_element('select')
-        select_element.set('idref', rule.id)
-        select_element.set('selected', str(selected))
+        self.sub_element('select')\
+            .set_attr('idref', rule.id)\
+            .set_attr('selected', str(selected))
 
 
 class BenchmarkGroup(XmlBase):
@@ -96,16 +83,16 @@ class BenchmarkGroup(XmlBase):
         self.set_attr('id', id)
 
     def set_title(self, text):
-        title = self.sub_element('title')
-        title.text = text
+        self.sub_element('title').set_text(text)
+        return self
 
     def set_description(self, text):
-        description = self.sub_element('description')
-        description.text = text
+        self.sub_element('description').set_text(text)
+        return self
 
     def add_rule(self, id):
         rule = BenchmarkRule(id)
-        self._.append(rule._)
+        self.append(rule)
         return rule
 
 
@@ -118,16 +105,16 @@ class BenchmarkRule(XmlBase):
         self.set_attr('severity', severity)
 
     def set_title(self, text):
-        title = self.sub_element('title')
-        title.text = text
+        self.sub_element('title').set_text(text)
+        return self
 
     def set_description(self, text):
-        description = self.sub_element('description')
-        description.text = text
+        self.sub_element('description').set_text(text)
+        return self
 
     def add_check(self, **kwargs):
         check = XccdfCheck(**kwargs)
-        self._.append(check._)
+        self.append(check)
         return check
 
 
@@ -148,13 +135,9 @@ class XccdfCheck(XmlBase):
     def check_import(self, *args, **kwargs):
         attrs = dict(zip(('attrs',), args)).get('attrs', {})
         attrs.update(kwargs)
-        element = self.sub_element('check-import')
-        for key, value in attrs.items():
-            element.set(key, value)
+        self.sub_element('check-import').set_attrs(attrs)
 
     def check_content_ref(self, *args, **kwargs):
         attrs = dict(zip(('attrs',), args)).get('attrs', {})
         attrs.update(kwargs)
-        element = self.sub_element('check-content-ref')
-        for key, value in attrs.items():
-            element.set(key, value)
+        self.sub_element('check-content-ref').set_attrs(attrs)
