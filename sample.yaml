@@ -1,0 +1,25 @@
+
+benchmark:
+  id: 'sample_xccdf'
+  title: OpenStack services
+  description: |
+    Benchmark description
+  version: 0.1
+  platform: 'cpe:/o:canonical:ubuntu_linux:16.04'
+  rules:
+  - test_bin_true:
+      type: cmd_exec
+      title: "Test /bin/true"
+      cmd: "/bin/true"
+
+#    <custom_item>
+#      system      : "Linux"
+#      type        : CMD_EXEC
+#      description : "1.1.1.2 Ensure mounting of freevxfs filesystems is disabled (modprobe)"
+#      info        : "The freevxfs filesystem type is a free version of the Veritas type filesystem. This is the primary filesystem type for HP-UX operating systems.  Removing support for unneeded filesystem types reduces the local attack surface of the system. If this filesystem type is not needed, disable it."
+#      solution    : "Edit or create the file /etc/modprobe.d/CIS.conf and add the following line: install freevxfs /bin/true"
+#      reference   : "800-53|CM-7,800-171|3.4.6,800-171|3.4.7,CN-L3|7.1.3.5(c),CN-L3|7.1.3.7(d),CSF|PR.IP-1,CSF|PR.PT-3,ITSG-33|CM-7,CSCv6|13,LEVEL|1S,PCI-DSSv3.1|2.2.4,PCI-DSSv3.2|2.2.4"
+#      see_also    : "https://workbench.cisecurity.org/files/1867"
+#      cmd         : "/sbin/modprobe -n -v freevxfs | /usr/bin/awk \'{print} END {if (NR != 0) print \"pass\" ; else print \"fail\"}\'"
+#      expect      : "pass"
+#    </custom_item>
