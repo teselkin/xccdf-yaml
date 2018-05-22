@@ -28,12 +28,12 @@ class CliTestXccdf(Command):
         return parser
 
     def take_action(self, parsed_args):
-        benchmark = Benchmark('test_benchmark')
-        benchmark.set_description('<b>Description</b>')
+        benchmark = Benchmark('test_benchmark')\
+            .set_description('<b>Description</b>')
         benchmark.add_platform('cpe:/o:canonical:ubuntu_linux:16.04')
 
-        profile = benchmark.add_profile('mos')
-        profile.set_title('Mirantis uberprofile')
+        profile = benchmark.add_profile('mos')\
+            .set_title('Mirantis uberprofile')
 
         group = benchmark.add_group('common')
         rule = group.add_rule('etc_os_release_does_not_match_Xerus')
