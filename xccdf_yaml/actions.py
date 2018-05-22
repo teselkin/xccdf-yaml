@@ -44,7 +44,7 @@ class ConvertYamlAction(object):
             parser = PARSERS[metadata['type']](parsed_args)
             rule = parser.parse(id, metadata)
             group.append_rule(rule)
-            profile.append_rule(rule)
+            profile.append_rule(rule, selected=True)
 
         filename = os.path.join(parsed_args.output_dir,
                                 '{}-xccdf.yaml'.format(benchmark_id))
