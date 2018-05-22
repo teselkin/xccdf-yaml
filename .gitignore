@@ -1,6 +1,7 @@
 .eggs/
 .idea/
 build/
+output/
 venv/
 *.egg-info/
 *.pyc
