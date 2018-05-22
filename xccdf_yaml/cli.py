@@ -413,6 +413,6 @@ class CliListParsers(Lister):
     def take_action(self, parsed_args):
         cols = ('Name', 'About')
         rows = []
-        for cls in PARSERS:
+        for cls in PARSERS.values():
             rows.append((cls.name(), cls.about()))
         return cols, rows

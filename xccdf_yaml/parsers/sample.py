@@ -1,4 +1,4 @@
-from xccdf_yaml.parsers import GenericParser
+from xccdf_yaml.parsers.common import GenericParser
 
 
 class YamlParserSample(GenericParser):

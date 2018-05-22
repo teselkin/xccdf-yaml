@@ -1,18 +1,6 @@
-from xccdf_yaml.common import ClassLoader
+from xccdf_yaml.parsers.sample import YamlParserSample
 
 
-class GenericParser(object):
-    def __init__(self):
-        pass
-
-    @classmethod
-    def name(cls):
-        return cls.__id__
-
-    @classmethod
-    def about(cls):
-        return ''
-
-
-PARSERS = ClassLoader(__name__)
-PARSERS.load(startswith='YamlParser')
+PARSERS = {
+    'sample': YamlParserSample,
+}
