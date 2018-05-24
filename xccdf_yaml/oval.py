@@ -1,4 +1,3 @@
-import lxml.etree as etree
 import datetime
 
 from xccdf_yaml.xml import XmlCommon
@@ -32,30 +31,51 @@ class OvalDefinitions(XmlBase):
         generator = Generator()
         self.append(generator)
 
-        self.definitions = self.sub_element('definitions')
-        self.tests = self.sub_element('tests')
-        self.objects = self.sub_element('objects')
-        self.states = self.sub_element('states')
+        self._definitions = []
+        self._tests = []
+        self._objects = []
+        self._states = []
 
     def add_definition(self, id):
         definition = Definition(id)
-        self.definitions.append(definition)
+        self._definitions.append(definition)
         return definition
 
     def add_test(self, name, ns=None):
         instance = OvalTest(name, ns)
-        self.tests.append(instance)
+        self._tests.append(instance)
         return instance
 
-    def add_object(self, name, ns=None):
-        instance = OvalObject(name, ns)
-        self.objects.append(instance)
+    def add_object(self, id, name, ns=None):
+        instance = OvalObject(id, name, ns)
+        self._objects.append(instance)
         return instance
 
-    def add_state(self, name, ns=None):
-        instance = OvalState(name, ns)
-        self.states.append(instance)
+    def add_state(self, id, name, ns=None):
+        instance = OvalState(id, name, ns)
+        self._states.append(instance)
         return instance
+
+    def update_elements(self):
+        self.remove_elements(name='definitions')
+        definitions = self.sub_element('definitions')
+        for x in self._definitions:
+            definitions.append(x)
+
+        self.remove_elements(name='tests')
+        tests = self.sub_element('tests')
+        for x in self._tests:
+            tests.append(x)
+
+        self.remove_elements(name='objects')
+        objects  = self.sub_element('objects')
+        for x in self._objects:
+            objects.append(x)
+
+        self.remove_elements(name='states')
+        states = self.sub_element('states')
+        for x in self._states:
+            states.append(x)
 
 
 class Generator(XmlBase):
@@ -74,16 +94,27 @@ class Definition(XmlBase):
     def __init__(self, id, version='1', class_name='compliance'):
         super().__init__('definition')
         self.set_attr('id', id)
+        self._metadata = None
+        self._criteria = []
 
     def add_metadata(self):
         metadata = Metadata()
-        self.append(metadata)
+        self._metadata = metadata
         return metadata
 
     def add_criteria(self, operator='OR'):
         criteria = Criteria(operator=operator)
-        self.append(criteria)
+        self._criteria.append(criteria)
         return criteria
+
+    def update_elements(self):
+        self.remove_elements(name='metadata')
+        if self._metadata:
+            self.append(self._metadata)
+
+        self.remove_elements(name='criteria')
+        for x in self._criteria:
+            self.append(x)
 
 
 class Metadata(XmlBase):
@@ -113,21 +144,26 @@ class Metadata(XmlBase):
         affected.sub_element('platform').set_text(platform)
         return self
 
-    def add_criteria(self, operator):
-        criteria = Criteria(operator=operator)
-        self.append(criteria)
-        return criteria
-
 
 class Criteria(XmlBase):
     def __init__(self, operator='OR'):
         super().__init__('criteria')
         self.set_attr('operator', operator)
+        self._criterion = []
 
-    def add_criterion(self, test_ref):
+    def add_criterion(self, instance):
+        self._criterion.append(instance)
+        return instance
+
+    def new_criterion(self, test_ref):
         criterion = Criterion(test_ref=test_ref)
-        self.append(criterion)
+        self._criterion.append(criterion)
         return criterion
+
+    def update_elements(self):
+        self.remove_elements(name='criterion')
+        for x in self._criterion:
+            self.append(x)
 
 
 class Criterion(XmlBase):
@@ -137,25 +173,38 @@ class Criterion(XmlBase):
 
 
 class OvalTest(XmlBase):
-    def __init__(self, name, ns=None):
+    def __init__(self, id, name, ns=None):
         super().__init__(name, ns=ns)
+        self.set_attr('id', id)
+        self._objects = set()
+        self._states = set()
 
     def add_object(self, instance):
-        obj = self.sub_element('object')
-        id = instance.get_attr('id')
-        obj.set_attr('object_ref', id)
+        print(repr(instance))
+        self._objects.add(instance)
 
     def add_state(self, instance):
-        state = self.sub_element('state')
-        id = instance.get_attr('id')
-        state.set_attr('state_ref', id)
+        self._states.add(instance)
+
+    def update_elements(self):
+        self.remove_elements(name='object')
+        for x in self._objects:
+            self.sub_element('object')\
+                .set_attr('object_ref', x.get_attr('id'))
+
+        self.remove_elements(name='state')
+        for x in self._states:
+            self.sub_element('state')\
+                .set_attr('state_ref', x.get_attr('id'))
 
 
 class OvalObject(XmlBase):
-    def __init__(self, name, ns=None):
+    def __init__(self, id, name, ns=None):
         super().__init__(name, ns=ns)
+        self.set_attr('id', id)
 
 
 class OvalState(XmlBase):
-    def __init__(self, name, ns=None):
+    def __init__(self, id, name, ns=None):
         super().__init__(name, ns=ns)
+        self.set_attr('id', id)

@@ -28,14 +28,25 @@ class XmlCommon(object):
         namespace = ns or self._ns
         return etree.QName(self._nsmap[namespace], name)
 
+    def remove_elements(self, name=None, elements=[]):
+        if name:
+            self._children.pop(name, None)
+        else:
+            for element in elements:
+                name = element._name
+                try:
+                    self._children[name].remove(element)
+                except (KeyError, IndexError):
+                    pass
+
     def append(self, element):
-        self._children.setdefault(element._name, []).append(element)
+        self._children.setdefault(element._name, set()).add(element)
         return element
 
     def sub_element(self, name, ns=None):
         namespace = ns or self._ns
         element = XmlCommon(name, ns=namespace, nsmap=self._nsmap)
-        self._children.setdefault(name, []).append(element)
+        self._children.setdefault(name, set()).add(element)
         return element
 
     def set_text(self, text):
@@ -55,7 +66,12 @@ class XmlCommon(object):
         self._attrs.update(attrs)
         return self
 
+    def update_elements(self):
+        return
+
     def xml(self):
+        self.update_elements()
+
         element = etree.Element(self.tag(self._name), nsmap=self._nsmap)
         for key, value in self._attrs.items():
             element.set(key, value)

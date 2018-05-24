@@ -33,6 +33,8 @@ class Benchmark(XmlBase):
 
     def __init__(self, id, version='0.1', status='draft', status_date=None):
         super().__init__('Benchmark')
+        self._profiles = []
+        self._groups = []
         self.set_attr('id', id)
         self.set_status(status, status_date)
         self.set_version(version)
@@ -60,13 +62,22 @@ class Benchmark(XmlBase):
 
     def add_profile(self, id):
         profile = BenchmarkProfile(id)
-        self.append(profile)
+        self._profiles.append(profile)
         return profile
 
     def add_group(self, id):
         group = BenchmarkGroup(id)
-        self.append(group)
+        self._groups.append(group)
         return group
+
+    def update_elements(self):
+        self.remove_elements(name='Profile')
+        for x in self._profiles:
+            self.append(x)
+
+        self.remove_elements(name='Group')
+        for x in self._groups:
+            self.append(x)
 
 
 class BenchmarkProfile(XmlBase):
@@ -79,6 +90,7 @@ class BenchmarkProfile(XmlBase):
     def __init__(self, id):
         super().__init__('Profile')
         self.set_attr('id', id)
+        self._rules = []
 
     def set_title(self, text):
         self.sub_element('title').set_text(text)
@@ -89,17 +101,23 @@ class BenchmarkProfile(XmlBase):
         return self
 
     def append_rule(self, rule, selected=False):
-        self.sub_element('select').set_attrs({
-            'idref': rule.get_attr('id'),
-            'selected': {True: '1', False: '0'}.get(selected, '0')
-        })
+        self._rules.append((rule, selected))
         return self
+
+    def update_elements(self):
+        self.remove_elements(name='select')
+        for rule, selected in self._rules:
+            self.sub_element('select').set_attrs({
+                'idref': rule.get_attr('id'),
+                'selected': {True: '1', False: '0'}.get(selected, '0')
+            })
 
 
 class BenchmarkGroup(XmlBase):
     def __init__(self, id):
         super().__init__('Group')
         self.set_attr('id', id)
+        self._rules = []
 
     def set_title(self, text):
         self.sub_element('title').set_text(text)
@@ -110,13 +128,18 @@ class BenchmarkGroup(XmlBase):
         return self
 
     def append_rule(self, rule):
-        self.append(rule)
+        self._rules.append(rule)
         return rule
 
     def add_rule(self, id):
         rule = BenchmarkRule(id)
-        self.append(rule)
+        self._rules.append(rule)
         return rule
+
+    def update_elements(self):
+        self.remove_elements(name='Rule')
+        for x in self._rules:
+            self.append(x)
 
 
 class BenchmarkRule(XmlBase):
@@ -127,6 +150,7 @@ class BenchmarkRule(XmlBase):
             'severity': severity,
             'selected': {True: '1', False: '0'}.get(selected, '0'),
         })
+        self._checks = []
 
     def set_title(self, text):
         self.sub_element('title').set_text(text)
@@ -138,8 +162,13 @@ class BenchmarkRule(XmlBase):
 
     def add_check(self, **kwargs):
         check = XccdfCheck(**kwargs)
-        self.append(check)
+        self._checks.append(check)
         return check
+
+    def update_elements(self):
+        self.remove_elements(name='check')
+        for x in self._checks:
+            self.append(x)
 
 
 class XccdfCheck(XmlBase):
