@@ -1,0 +1,35 @@
+benchmark:
+  id: openstack_keystone
+  title: OpenStack Keytone Benchmark
+  description: >
+    Identity service (keystone) provides identity, token, catalog, and policy
+    services for use specifically by services in the OpenStack family.
+    Identity service is organized as a group of internal services exposed on
+    one or many endpoints. Many of these services are used in a combined
+    fashion by the front end. For example, an authentication call validates
+    user and project credentials with the identity service. If successful,
+    it will create and return a token with the token service. More information
+    can be found by reading the <html:a xmlns:html="http://www.w3.org/1999/xhtml" href="https://docs.openstack.org/keystone/latest/index.html">keystone Developer Documentation</html:a>.
+  platform: 'cpe:/o:canonical:ubuntu_linux:16.04'
+  rules:
+  - check_identity_01:
+      type: cmd_exec
+      title: Is user/group ownership of config files set to keystone?
+      description: >
+        Configuration files contain critical parameters and information required
+        for smooth functioning of the component. If an unprivileged user, either
+        intentionally or accidentally modifies or deletes any of the parameters
+        or the file itself then it would cause severe availability issues causing
+        a denial of service to the other end users. Thus user and group ownership
+        of such critical configuration files must be set to that component owner.
+      reference:
+      - https://docs.openstack.org/security-guide/identity/checklist.html#check-identity-01-is-user-group-ownership-of-config-files-set-to-keystone:
+          "Check-Identity-01: Is user/group ownership of config files set to keystone?"
+      cmd: |
+        stat -L -c "%U %G" /etc/keystone/keystone.conf | egrep "keystone keystone"
+        stat -L -c "%U %G" /etc/keystone/keystone-paste.ini | egrep "keystone keystone"
+        stat -L -c "%U %G" /etc/keystone/policy.json | egrep "keystone keystone"
+        stat -L -c "%U %G" /etc/keystone/logging.conf | egrep "keystone keystone"
+        stat -L -c "%U %G" /etc/keystone/ssl/certs/signing_cert.pem | egrep "keystone keystone"
+        stat -L -c "%U %G" /etc/keystone/ssl/private/signing_key.pem | egrep "keystone keystone"
+        stat -L -c "%U %G" /etc/keystone/ssl/certs/ca.pem | egrep "keystone keystone"
