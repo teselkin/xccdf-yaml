@@ -18,8 +18,9 @@ class CmdExecParser(object):
                                            filename)
             with open(target_filename, 'w') as f:
                 f.write('#!/bin/bash\n')
-                f.write(metadata['cmd'])
-                f.write('\n')
+                f.write('set -o pipefail\n')
+                f.write('%s || exit ${XCCDF_RESULT_FAIL}\n' % metadata['cmd'])
+                f.write('exit ${XCCDF_RESULT_PASS}\n')
         elif 'filename' in metadata:
             filename = metadata['filename']
             target_filename = os.path.join(self.parsed_args.output_dir,
