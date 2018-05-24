@@ -10,7 +10,17 @@ benchmark:
   - test_bin_true:
       type: cmd_exec
       title: "Test /bin/true"
-      cmd: "/bin/true"
+      description: |
+        This is a test script
+      reference:
+      - ref1
+      - http://google.com:
+          Let me Google it for you
+      rationale: |
+        Some rationale
+      cmd: |
+        /bin/true
+        /bin/false
 
 #    <custom_item>
 #      system      : "Linux"

@@ -17,7 +17,23 @@ class XmlBase(XmlCommon):
         super().__init__(name, ns=ns, nsmap=NSMAP)
 
 
-class Benchmark(XmlBase):
+class SetTitleMixin(object):
+    def set_title(self, text):
+        if text is not None:
+            self.sub_element('title')\
+                .set_text(text.rstrip())
+        return self
+
+
+class SetDescriptionMixin(object):
+    def set_description(self, text):
+        if text is not None:
+            self.sub_element('description')\
+                .set_text(text.rstrip())
+        return self
+
+
+class Benchmark(XmlBase, SetTitleMixin, SetDescriptionMixin):
     __elements_order__ = (
         'status',
         'title',
@@ -38,14 +54,6 @@ class Benchmark(XmlBase):
         self.set_attr('id', id)
         self.set_status(status, status_date)
         self.set_version(version)
-
-    def set_title(self, text):
-        self.sub_element('title').set_text(text)
-        return self
-
-    def set_description(self, text):
-        self.sub_element('description').set_text(text)
-        return self
 
     def set_status(self, status='draft', status_date=None):
         element = self.sub_element('status').set_text(status)
@@ -80,7 +88,7 @@ class Benchmark(XmlBase):
             self.append(x)
 
 
-class BenchmarkProfile(XmlBase):
+class BenchmarkProfile(XmlBase, SetTitleMixin, SetDescriptionMixin):
     __elements_order__ = (
         'title',
         'description',
@@ -91,14 +99,6 @@ class BenchmarkProfile(XmlBase):
         super().__init__('Profile')
         self.set_attr('id', id)
         self._rules = []
-
-    def set_title(self, text):
-        self.sub_element('title').set_text(text)
-        return self
-
-    def set_description(self, text):
-        self.sub_element('description').set_text(text)
-        return self
 
     def append_rule(self, rule, selected=False):
         self._rules.append((rule, selected))
@@ -113,19 +113,16 @@ class BenchmarkProfile(XmlBase):
             })
 
 
-class BenchmarkGroup(XmlBase):
+class BenchmarkGroup(XmlBase, SetTitleMixin, SetDescriptionMixin):
+    __elements_order__ = (
+        'title',
+        'description',
+    )
+
     def __init__(self, id):
         super().__init__('Group')
         self.set_attr('id', id)
         self._rules = []
-
-    def set_title(self, text):
-        self.sub_element('title').set_text(text)
-        return self
-
-    def set_description(self, text):
-        self.sub_element('description').set_text(text)
-        return self
 
     def append_rule(self, rule):
         self._rules.append(rule)
@@ -142,7 +139,15 @@ class BenchmarkGroup(XmlBase):
             self.append(x)
 
 
-class BenchmarkRule(XmlBase):
+class BenchmarkRule(XmlBase, SetTitleMixin, SetDescriptionMixin):
+    __elements_order__ = (
+        'title',
+        'description',
+        'reference',
+        'rationale',
+        'check',
+    )
+
     def __init__(self, id, selected=False, severity='medium'):
         super().__init__('Rule')
         self.set_attrs({
@@ -151,14 +156,6 @@ class BenchmarkRule(XmlBase):
             'selected': {True: '1', False: '0'}.get(selected, '0'),
         })
         self._checks = []
-
-    def set_title(self, text):
-        self.sub_element('title').set_text(text)
-        return self
-
-    def set_description(self, text):
-        self.sub_element('description').set_text(text)
-        return self
 
     def add_check(self, **kwargs):
         check = XccdfCheck(**kwargs)
@@ -172,6 +169,12 @@ class BenchmarkRule(XmlBase):
 
 
 class XccdfCheck(XmlBase):
+    __elements_order__ = (
+        'check-import',
+        'check-content',
+        'check-content-ref',
+    )
+
     def __init__(self, id=None, system_ns='oval-def'):
         super().__init__('check')
         if id:

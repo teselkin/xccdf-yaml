@@ -20,31 +20,39 @@ class ConvertYamlAction(object):
 
         benchmark_id = data.get('id') or parsed_args.filename
 
-        benchmark = Benchmark(benchmark_id)
-        title = data.get('title')
-        if title:
-            benchmark.set_title(title.rstrip())
-
-        description = data.get('description')
-        if description:
-            benchmark.set_description(description.rstrip())
+        benchmark = Benchmark(benchmark_id)\
+            .set_title(data.get('title'))\
+            .set_description(data.get('description'))
 
         platform = data.get('platform')
         if platform:
             benchmark.add_platform(platform.rstrip())
 
-        profile = benchmark\
-            .add_profile('default')\
-            .set_title('Default profile')
+        profile_info = data.get('profile', {
+            'id': 'default',
+            'title': 'Default Profile',
+        })
 
-        group = benchmark.add_group('default')
+        profile = benchmark\
+            .add_profile(profile_info['id'])\
+            .set_title(profile_info.get('title'))\
+            .set_description(profile_info.get('description'))
+
+        group_info = data.get('group', {
+            'id': 'default',
+            'title': 'Default Group'
+        })
+
+        group = benchmark\
+            .add_group(group_info.get('id'))\
+            .set_title(group_info.get('title'))
 
         for item in data.get('rules', []):
             id, metadata = next(iter(item.items()))
             parser = PARSERS[metadata['type']](parsed_args)
-            rule = parser.parse(id, metadata)
-            group.append_rule(rule)
-            profile.append_rule(rule, selected=True)
+            res = parser.parse(id, metadata)
+            group.append_rule(res.rule)
+            profile.append_rule(res.rule, selected=True)
 
         filename = os.path.join(parsed_args.output_dir,
                                 '{}-xccdf.yaml'.format(benchmark_id))
