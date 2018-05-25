@@ -16,8 +16,9 @@ class CliConvertYaml(Command):
 
     def get_parser(self, prog_name):
         parser = super().get_parser(prog_name)
-        parser.add_argument('filename')
+        parser.add_argument('--unescape', action='store_true')
         parser.add_argument('--output-dir', default='output')
+        parser.add_argument('filename')
         return parser
 
     def take_action(self, parsed_args):

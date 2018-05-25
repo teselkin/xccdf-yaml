@@ -6,8 +6,9 @@ import shutil
 
 
 class CmdExecParser(object):
-    def __init__(self, parsed_args=None):
+    def __init__(self, parsed_args=None, output_dir=None):
         self.parsed_args = parsed_args
+        self.output_dir = output_dir or parsed_args.output_dir
 
     def parse(self, id, metadata):
         res = ParsedObjects()
@@ -28,15 +29,13 @@ class CmdExecParser(object):
             else:
                 ref.set_text(reference)
 
-
         if 'rationale' in metadata:
             rule.sub_element('rationale')\
                 .set_text(metadata['rationale'].rstrip())
 
         if 'cmd' in metadata:
             filename = '{}.sh'.format(id)
-            target_filename = os.path.join(self.parsed_args.output_dir,
-                                           filename)
+            target_filename = os.path.join(self.output_dir, filename)
             with open(target_filename, 'w') as f:
                 f.write('#!/bin/bash\n')
                 f.write('set -o errexit\n')
@@ -50,8 +49,7 @@ class CmdExecParser(object):
                 f.write('exit_pass\n')
         elif 'filename' in metadata:
             filename = metadata['filename']
-            target_filename = os.path.join(self.parsed_args.output_dir,
-                                           filename)
+            target_filename = os.path.join(self.output_dir, filename)
             shutil.copyfile(filename, target_filename)
         else:
             raise Exception('No script or cmdline found')

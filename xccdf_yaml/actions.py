@@ -1,4 +1,6 @@
 import os
+import html
+import lxml.etree as etree
 
 from xccdf_yaml.common import YamlLoader
 from xccdf_yaml.xccdf import Benchmark
@@ -16,9 +18,10 @@ class ConvertYamlAction(object):
         if data is None:
             raise Exception('No benchmark section found')
 
-        os.makedirs(parsed_args.output_dir, exist_ok=True)
-
         benchmark_id = data.get('id') or parsed_args.filename
+
+        output_dir = os.path.join(parsed_args.output_dir, benchmark_id)
+        os.makedirs(output_dir, exist_ok=True)
 
         benchmark = Benchmark(benchmark_id)\
             .set_title(data.get('title'))\
@@ -49,14 +52,21 @@ class ConvertYamlAction(object):
 
         for item in data.get('rules', []):
             id, metadata = next(iter(item.items()))
-            parser = PARSERS[metadata['type']](parsed_args)
+            parser = PARSERS[metadata['type']](parsed_args, output_dir)
             res = parser.parse(id, metadata)
             group.append_rule(res.rule)
             profile.append_rule(res.rule, selected=True)
 
-        filename = os.path.join(parsed_args.output_dir,
+        filename = os.path.join(output_dir,
                                 '{}-xccdf.yaml'.format(benchmark_id))
+
+        xml = benchmark.xml()
+        xml_str = etree.tostring(xml, pretty_print=True).decode()
+
+        if parsed_args.unescape:
+            xml_str = html.unescape(xml_str)
+
         with open(filename, 'w') as f:
-            f.write(str(benchmark))
+            f.write(xml_str)
 
         return
