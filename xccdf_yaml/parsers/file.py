@@ -12,14 +12,14 @@ class FileParser(GenericParser):
 
     @staticmethod
     def __parse_mode__(mode):
-        modes = OrderedDict()
-        u, g, o = list(map(lambda x: list(map(lambda y: str(bool(int(y))).lower(),'{:03b}'.format(int(x)))),mode))
-        for i in ['u', 'g', 'o']:
-            r, w, x = eval(i)
-            modes['{}read'.format(i)] = r
-            modes['{}write'.format(i)] = w
-            modes['{}exec'.format(i)] = x
-        return modes
+        bit_names = [
+        'uread', 'uwrite', 'uexec',
+        'gread', 'gwrite', 'gexec',
+        'oread', 'owrite', 'oexec',
+        ]
+        bit_values = [str(x == '1').lower()
+                      for x in '{:09b}'.format(mode)[:9]]
+        return OrderedDict(zip(bit_names, bit_values))
 
     def parse(self, id, metadata):
         res = {}
