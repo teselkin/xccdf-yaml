@@ -21,12 +21,12 @@ class SysctlParser(GenericParser):
         sid = 'oval:{}:ste:1'.format(id)
 
         # Object
-        obj = OvalObject(oid)
+        obj = OvalObject(oid, 'sysctl_object')
         fpath = obj.sub_element('name').set_text(metadata['key'])
         res['object'].append(obj)
 
         # State
-        state = OvalState(sid)
+        state = OvalState(sid 'sysctl_state')
         sysctl_value = state.sub_element('value').set_text(metadata['value'])
         sysctl_value.set_attrs({
             'datatype': 'int',
@@ -35,7 +35,7 @@ class SysctlParser(GenericParser):
         res['states'].append(state)
 
         # Test
-        test = OvalTest(tid)
+        test = OvalTest(tid, 'sysctl_test')
         o = test.sub_element('object')
         o.set_attr('object_ref', oid)
         s = test.sub_element('state')
