@@ -12,14 +12,14 @@ class FileParser(GenericParser):
 
     @staticmethod
     def __parse_mode__(mode):
-        modes = OrderedDict()
-        u, g, o = list(map(lambda x: list(map(lambda y: str(bool(int(y))).lower(),'{:03b}'.format(int(x)))),mode))
-        for i in ['u', 'g', 'o']:
-            r, w, x = eval(i)
-            modes['{}read'.format(i)] = r
-            modes['{}write'.format(i)] = w
-            modes['{}exec'.format(i)] = x
-        return modes
+        bit_names = [
+        'uread', 'uwrite', 'uexec',
+        'gread', 'gwrite', 'gexec',
+        'oread', 'owrite', 'oexec',
+        ]
+        bit_values = [str(x == '1').lower()
+                      for x in '{:09b}'.format(mode)[:9]]
+        return OrderedDict(zip(bit_names, bit_values))
 
     def parse(self, id, metadata):
         res = {}
@@ -33,7 +33,7 @@ class FileParser(GenericParser):
 
         # Object
         if 'filename' in metadata:
-            obj = OvalObject(oid)
+            obj = OvalObject(oid, 'file_object')
             fpath = obj.sub_element('filepath').set_text(metadata['filename'])
             fpath.set_attr('operation', 'pattern match')
             res['object'].append(obj)
@@ -48,12 +48,12 @@ class FileParser(GenericParser):
             modes = self.__parse_mode__(mode)
             tid = 'oval:{}_mode:tst:1'.format(id)
             sid = 'oval:{}_mode:ste:1'.format(id)
-            state = OvalState(sid)
+            state = OvalState(sid, 'file_state')
             for k, v in modes.items():
                 attrs = {'type': 'boolean'}
                 entity = state.sub_element(k).set_text(v)
                 entity.set_attrs(attrs)
-            t = OvalTest(tid)
+            t = OvalTest(tid, 'file_test')
             # Can't use test.add_(object|state) due to incorrect id!
             o = test.sub_element('object')
             o.set_attr('object_ref', oid)
@@ -67,11 +67,11 @@ class FileParser(GenericParser):
                 raise Exception('UID must be positive decimal')
             tid = 'oval:{}_uid:tst:1'.format(uid)
             sid = 'oval:{}_uid:ste:1'.format(uid)
-            state = OvalState(sid)
+            state = OvalState(sid, 'file_state')
             attrs = {'datatype': 'int', 'operation': 'equals'}
             _uid = state.sub_element('user_id').set_text(uid)
             _uid.set_attrs(attrs)
-            test = OvalTest(tid)
+            test = OvalTest(tid, 'file_test')
             o = test.sub_element('object')
             o.set_attr('object_ref', oid)
             s = test.sub_element('state')
@@ -84,11 +84,11 @@ class FileParser(GenericParser):
                 raise Exception('GID must be positive decimal')
             tid = 'oval:{}_uid:tst:1'.format(uid)
             sid = 'oval:{}_gid:ste:1'.format(sid)
-            state = OvalState(sid)
+            state = OvalState(sid, 'file_state')
             attrs = {'datatype': 'int', 'operation': 'equals'}
             _gid = state.sub_element('group_id').set_text(gid)
             _gid.set_attrs(attrs)
-            test = OvalTest(tid)
+            test = OvalTest(tid, 'file_test')
             o = test.sub_element('object')
             o.set_attr('object_ref', oid)
             s = test.sub_element('state')

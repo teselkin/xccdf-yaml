@@ -22,14 +22,14 @@ class DpkginfoParser(GenericParser):
 
         # Object
         if 'name' in metadata:
-            obj = OvalObject(oid)
+            obj = OvalObject(oid, 'dpkginfo_object')
             pkgname = obj.sub_element('name').set_text(metadata['name'])
             res['object'].append(obj)
         else:
             raise Exception('name must be set')
 
         # State
-        state = OvalState(oid)
+        state = OvalState(oid, 'dpkginfo_state')
         if 'version' in metadata:
             version = metadata['version']
             operation = metadata.get('match')
@@ -51,7 +51,7 @@ class DpkginfoParser(GenericParser):
         res['states'].append(state)
 
         # Test
-        test = OvalTest(tid)
+        test = OvalTest(tid, 'dpkginfo_test')
         o = test.sub_element('object')
         o.set_attr('object_ref', oid)
         s = test.sub_element('state')

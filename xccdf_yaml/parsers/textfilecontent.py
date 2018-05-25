@@ -2,7 +2,6 @@ from xccdf_yaml.parsers.common import GenericParser
 
 from xccdf_yaml.oval import Definition
 from xccdf_yaml.oval import OvalObject
-from xccdf_yaml.oval import OvalState
 from xccdf_yaml.oval import OvalTest
 
 import os
@@ -33,10 +32,10 @@ class TextfilecontentParser(GenericParser):
             raise Exception('Unsupported filename format')
 
         for idx, f in enumerate(filenames):
-            # Objects
+            # Object
             oid = 'oval:{}_{}:obj:1'.format(id, idx)
             path, filename = os.path.split(filename)
-            obj = OvalObject(oid)
+            obj = OvalObject(oid, 'textfilecontent54_object')
             fpath = obj.sub_element('path').set_text(path)
             fname = obj.sub_element('filename').set_text(filename)
             fname.set_attr('operation', 'pattern match')
@@ -46,13 +45,11 @@ class TextfilecontentParser(GenericParser):
             instance.set_attr('datatype', 'int')
             res['object'].append(obj)
 
-            # Tests
+            # Test
             tid = 'oval:{}_{}:obj:1'.format(id, idx)
-            test = OvalTest(tid)
+            test = OvalTest(tid. 'textfilecontent54_test')
             o = test.sub_element('object')
             o.set_attr('object_ref', oid)
-            s = test.sub_element('state')
-            s.set_attr('state_ref', sid)
             res['tests'].append(test)
 
         # definition
