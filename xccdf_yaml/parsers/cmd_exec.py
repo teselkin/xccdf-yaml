@@ -41,10 +41,10 @@ class CmdExecParser(object):
                 f.write('set -o errexit\n')
                 f.write('set -o pipefail\n')
                 f.write('set -o nounset\n')
-                f.write('set -o xtrace\n')
                 f.write('trap \'exit_fail\' ERR\n')
                 f.write('exit_pass(){ exit ${XCCDF_RESULT_PASS:-0}; }\n')
                 f.write('exit_fail(){ exit ${XCCDF_RESULT_FAIL:-1}; }\n')
+                f.write('set -o xtrace\n')
                 f.write('{}\n'.format(metadata['cmd']))
                 f.write('exit_pass\n')
         elif 'filename' in metadata:
