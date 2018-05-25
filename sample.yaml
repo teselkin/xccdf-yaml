@@ -20,7 +20,14 @@ benchmark:
         Some rationale
       cmd: |
         /bin/true
-        /bin/false
+      python:
+        imports:
+        - 'import logging'
+        main: |
+          print("Hello World")
+        raw: |
+          def main():
+              print("Hello World")
 
 #    <custom_item>
 #      system      : "Linux"

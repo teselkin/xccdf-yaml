@@ -5,6 +5,51 @@ import stat
 import shutil
 
 
+SHELL_WRAPPER_HEAD = """#!/bin/bash
+set -o errexit
+set -o pipefail
+set -o nounset
+trap \'exit_fail\' ERR
+exit_pass(){ exit ${XCCDF_RESULT_PASS:-0}; }
+exit_fail(){ exit ${XCCDF_RESULT_FAIL:-1}; }
+set -o xtrace
+
+"""
+
+SHELL_WRAPPER_TAIL = """
+exit_pass
+"""
+
+PYTHON_WRAPPER_HEAD1 = """#!/usr/bin/python
+import os
+import sys
+import traceback
+
+"""
+
+PYTHON_WRAPPER_HEAD2 = """
+XCCDF_RESULT_PASS = os.environ.get('XCCDF_RESULT_PASS', 0)
+XCCDF_RESULT_FAIL = os.environ.get('XCCDF_RESULT_FAIL', 1)
+
+def exit_pass():
+    sys.exit(XCCDF_RESULT_PASS)
+
+def exit_fail():
+    sys.exit(XCCDF_RESULT_FAIL)
+
+"""
+
+PYTHON_WRAPPER_TAIL = """
+try:
+    main()
+    exit_pass()
+except:
+    traceback.print_exc(file=sys.stdout)
+    exit_fail()
+
+"""
+
+
 class CmdExecParser(object):
     def __init__(self, parsed_args=None, output_dir=None):
         self.parsed_args = parsed_args
@@ -37,16 +82,27 @@ class CmdExecParser(object):
             filename = '{}.sh'.format(id)
             target_filename = os.path.join(self.output_dir, filename)
             with open(target_filename, 'w') as f:
-                f.write('#!/bin/bash\n')
-                f.write('set -o errexit\n')
-                f.write('set -o pipefail\n')
-                f.write('set -o nounset\n')
-                f.write('trap \'exit_fail\' ERR\n')
-                f.write('exit_pass(){ exit ${XCCDF_RESULT_PASS:-0}; }\n')
-                f.write('exit_fail(){ exit ${XCCDF_RESULT_FAIL:-1}; }\n')
-                f.write('set -o xtrace\n')
+                f.write(SHELL_WRAPPER_HEAD)
                 f.write('{}\n'.format(metadata['cmd']))
-                f.write('exit_pass\n')
+                f.write(SHELL_WRAPPER_TAIL)
+        elif 'python' in metadata:
+            filename = '{}.py'.format(id)
+            target_filename = os.path.join(self.output_dir, filename)
+            with open(target_filename, 'w') as f:
+                f.write(PYTHON_WRAPPER_HEAD1)
+                for line in metadata['python'].get('imports', []):
+                    f.write('{}\n'.format(line))
+                f.write(PYTHON_WRAPPER_HEAD2)
+                if 'raw' in metadata['python']:
+                    f.write('{}\n'.format(metadata['python']['raw']))
+                if 'main' in metadata['python']:
+                    f.write('def main():\n')
+                    for line in metadata['python']['main'].split('\n'):
+                        if line.rstrip():
+                            f.write('    {}\n'.format(line))
+                        else:
+                            f.write('\n')
+                f.write(PYTHON_WRAPPER_TAIL)
         elif 'filename' in metadata:
             filename = metadata['filename']
             target_filename = os.path.join(self.output_dir, filename)
