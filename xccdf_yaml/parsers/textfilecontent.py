@@ -47,7 +47,7 @@ class TextfilecontentParser(GenericParser):
 
             # Test
             tid = 'oval:{}_{}:obj:1'.format(id, idx)
-            test = OvalTest(tid. 'textfilecontent54_test')
+            test = OvalTest(tid, 'textfilecontent54_test')
             o = test.sub_element('object')
             o.set_attr('object_ref', oid)
             res['tests'].append(test)

@@ -26,7 +26,7 @@ class SysctlParser(GenericParser):
         res['object'].append(obj)
 
         # State
-        state = OvalState(sid 'sysctl_state')
+        state = OvalState(sid, 'sysctl_state')
         sysctl_value = state.sub_element('value').set_text(metadata['value'])
         sysctl_value.set_attrs({
             'datatype': 'int',
