@@ -1,4 +1,4 @@
-import lxml.etree as etree
+import markdown
 
 from xccdf_yaml.xml import XmlCommon
 
@@ -20,16 +20,16 @@ class XmlBase(XmlCommon):
 class SetTitleMixin(object):
     def set_title(self, text):
         if text is not None:
-            self.sub_element('title')\
-                .set_text(text.rstrip())
+            content = text.rstrip()
+            self.sub_element('title').set_text(content)
         return self
 
 
 class SetDescriptionMixin(object):
     def set_description(self, text):
         if text is not None:
-            self.sub_element('description')\
-                .set_text(text.rstrip())
+            content = markdown.markdown(text.rstrip())
+            self.sub_element('description').set_text(content)
         return self
 
 
