@@ -14,8 +14,8 @@ benchmark:
         This is a test script
       reference:
       - ref1
-      - http://google.com:
-          Let me Google it for you
+      - text: Let me Google it for you
+        url: 'http://google.com'
       rationale: |
         Some rationale
       cmd: |

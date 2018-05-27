@@ -69,8 +69,9 @@ class CmdExecParser(object):
         for reference in metadata.get('reference', []):
             ref = rule.sub_element('reference')
             if isinstance(reference, dict):
-                for url, text in reference.items():
-                    ref.set_attr('href', url).set_text(text)
+                ref.set_text(reference['text'])
+                if 'url' in reference:
+                    ref.set_attr('href', reference['url'])
             else:
                 ref.set_text(reference)
 

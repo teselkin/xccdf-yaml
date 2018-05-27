@@ -23,8 +23,9 @@ benchmark:
         a denial of service to the other end users. Thus user and group ownership
         of such critical configuration files must be set to that component owner.
       reference:
-      - https://docs.openstack.org/security-guide/identity/checklist.html#check-identity-01-is-user-group-ownership-of-config-files-set-to-keystone:
-          "Check-Identity-01: Is user/group ownership of config files set to keystone?"
+      - text: 'Check-Identity-01: Is user/group ownership of config files set to keystone?'
+        url: 'https://docs.openstack.org/security-guide/identity/checklist.html#check-identity-01-is-user-group-ownership-of-config-files-set-to-keystone'
+
       cmd: |
         stat -L -c "%U %G" /etc/keystone/keystone.conf | egrep "keystone keystone"
         stat -L -c "%U %G" /etc/keystone/keystone-paste.ini | egrep "keystone keystone"
