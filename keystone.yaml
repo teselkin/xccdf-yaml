@@ -9,14 +9,13 @@ benchmark:
     fashion by the front end. For example, an authentication call validates
     user and project credentials with the identity service. If successful,
     it will create and return a token with the token service. More information
-    can be found by reading the
-    [https://docs.openstack.org/keystone/latest/index.html](keystone Developer Documentation).
+    can be found by reading the [https://docs.openstack.org/keystone/latest/index.html](keystone Developer Documentation).
   platform: 'cpe:/o:canonical:ubuntu_linux:16.04'
   rules:
   - check_identity_01:
       type: cmd_exec
       title: Is user/group ownership of config files set to keystone?
-      description: >
+      description: |
         Configuration files contain critical parameters and information required
         for smooth functioning of the component. If an unprivileged user, either
         intentionally or accidentally modifies or deletes any of the parameters
