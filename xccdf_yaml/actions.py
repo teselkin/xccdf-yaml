@@ -1,5 +1,6 @@
 import os
 import html
+import shutil
 import lxml.etree as etree
 
 from xccdf_yaml.common import YamlLoader
@@ -49,6 +50,14 @@ class ConvertYamlAction(object):
         group = benchmark\
             .add_group(group_info.get('id'))\
             .set_title(group_info.get('title'))
+
+        for filename in data.get('shared-files', []):
+            if not os.path.exists(filename):
+                raise Exception("Shared file '{}' not found"
+                                .format(filename))
+            target = os.path.join(output_dir, filename)
+            os.makedirs(os.path.dirname(target), exist_ok=True)
+            shutil.copyfile(filename, target)
 
         for item in data.get('rules', []):
             id, metadata = next(iter(item.items()))

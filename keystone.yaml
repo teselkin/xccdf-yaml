@@ -11,6 +11,8 @@ benchmark:
     it will create and return a token with the token service. More information
     can be found by reading the [https://docs.openstack.org/keystone/latest/index.html](keystone Developer Documentation).
   platform: 'cpe:/o:canonical:ubuntu_linux:16.04'
+  shared-files:
+  - functions.sh
   rules:
   - check_identity_01:
       type: cmd_exec
