@@ -1,6 +1,16 @@
 import lxml.etree as etree
 
 
+def set_default_ns(element, default_ns=None, nsmap={}):
+    e = etree.Element(etree.QName(nsmap[default_ns], element.tag), nsmap=nsmap)
+    for item in element:
+        e.append(set_default_ns(item, default_ns, nsmap))
+    for key, value in element.attrib.items():
+        e.attrib[key] = value
+    e.text = element.text
+    return e
+
+
 class XmlCommon(object):
     __elements_order__ = None
 

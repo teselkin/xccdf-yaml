@@ -1,6 +1,9 @@
+import lxml.etree as etree
 import markdown
 
+
 from xccdf_yaml.xml import XmlCommon
+from xccdf_yaml.xml import set_default_ns
 
 
 NSMAP = {
@@ -28,8 +31,12 @@ class SetTitleMixin(object):
 class SetDescriptionMixin(object):
     def set_description(self, text):
         if text is not None:
-            content = markdown.markdown(text.rstrip())
-            self.sub_element('description').set_text(content)
+            content = etree.fromstring(markdown.markdown(text.rstrip()))
+            content = set_default_ns(
+                content, default_ns='xhtml',
+                nsmap={'xhtml': 'http://www.w3.org/1999/xhtml'})
+            self.sub_element('description')\
+                .set_text(etree.tostring(content, pretty_print=True))
         return self
 
 

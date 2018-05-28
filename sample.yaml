@@ -4,7 +4,7 @@ benchmark:
 
   title: OpenStack services
   description: |
-    Benchmark description
+    Benchmark description [https://google.com](Google)
 
   platform: 'cpe:/o:canonical:ubuntu_linux:16.04'
 
