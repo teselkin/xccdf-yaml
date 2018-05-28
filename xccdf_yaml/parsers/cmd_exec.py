@@ -2,7 +2,6 @@ from xccdf_yaml.parsers.common import ParsedObjects
 
 import os
 import stat
-import shutil
 
 
 SHELL_WRAPPER_HEAD = """#!/bin/bash
@@ -104,10 +103,6 @@ class CmdExecParser(object):
                         else:
                             f.write('\n')
                 f.write(PYTHON_WRAPPER_TAIL)
-        elif 'filename' in metadata:
-            filename = metadata['filename']
-            target_filename = os.path.join(self.output_dir, filename)
-            shutil.copyfile(filename, target_filename)
         else:
             raise Exception('No script or cmdline found')
 
