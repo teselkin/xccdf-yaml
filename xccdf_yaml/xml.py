@@ -56,7 +56,9 @@ class XmlCommon(object):
     def sub_element(self, name, ns=None):
         namespace = ns or self._ns
         element = XmlCommon(name, ns=namespace, nsmap=self._nsmap)
-        self._children.setdefault(name, set()).add(element)
+        elements = self._children.setdefault(name, [])
+        if element not in elements:
+            elements.append(element)
         return element
 
     def set_text(self, text):
