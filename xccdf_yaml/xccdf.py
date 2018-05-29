@@ -114,10 +114,10 @@ class BenchmarkProfile(XmlBase, SetTitleMixin, SetDescriptionMixin):
     def update_elements(self):
         self.remove_elements(name='select')
         for rule, selected in self._rules:
-            self.sub_element('select').set_attrs({
-                'idref': rule.get_attr('id'),
-                'selected': {True: '1', False: '0'}.get(selected, '0')
-            })
+            self.sub_element('select')\
+                .set_attr('idref', rule.get_attr('id'))\
+                .set_attr('selected',
+                          {True: '1', False: '0'}.get(selected, '0'))
 
 
 class BenchmarkGroup(XmlBase, SetTitleMixin, SetDescriptionMixin):
@@ -157,11 +157,9 @@ class BenchmarkRule(XmlBase, SetTitleMixin, SetDescriptionMixin):
 
     def __init__(self, id, selected=False, severity='medium'):
         super().__init__('Rule')
-        self.set_attrs({
-            'id': id,
-            'severity': severity,
-            'selected': {True: '1', False: '0'}.get(selected, '0'),
-        })
+        self.set_attr('id', id)
+        self.set_attr('selected', {True: '1', False: '0'}.get(selected, '0'))
+        self.set_attr('severity', severity)
         self._checks = []
 
     def add_check(self, **kwargs):
