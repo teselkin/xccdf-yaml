@@ -50,15 +50,15 @@ class XmlCommon(object):
                     pass
 
     def append(self, element):
-        self._children.setdefault(element._name, set()).add(element)
+        elements = self._children.setdefault(element._name, [])
+        if element not in elements:
+            elements.append(element)
         return element
 
     def sub_element(self, name, ns=None):
         namespace = ns or self._ns
         element = XmlCommon(name, ns=namespace, nsmap=self._nsmap)
-        elements = self._children.setdefault(name, [])
-        if element not in elements:
-            elements.append(element)
+        self.append(element)
         return element
 
     def set_text(self, text):
