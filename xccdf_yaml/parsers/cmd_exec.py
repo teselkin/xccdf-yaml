@@ -20,7 +20,7 @@ XCCDF_RESULT[INFORMATIONAL]=${XCCDF_RESULT_INFORMATIONAL:-108}
 XCCDF_RESULT[FIXED]=${XCCDF_RESULT_FIXED:-109}
 exit_with(){
   set +o xtrace
-  local status=${1:-ERROR}}
+  local status=${1:-ERROR}
   local ec=${XCCDF_RESULT[${status}]:-${XCCDF_RESULT[ERROR]}}
   echo "Exiting with status ${status}(${ec})"
   exit ${ec}
