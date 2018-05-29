@@ -8,15 +8,30 @@ SHELL_WRAPPER_HEAD = """#!/bin/bash
 set -o errexit
 set -o pipefail
 set -o nounset
-trap \'exit_fail\' ERR
-exit_pass(){ exit ${XCCDF_RESULT_PASS:-0}; }
-exit_fail(){ exit ${XCCDF_RESULT_FAIL:-1}; }
+declare -A XCCDF_RESULT
+XCCDF_RESULT[PASS]=${XCCDF_RESULT_PASS:-101}
+XCCDF_RESULT[FAIL]=${XCCDF_RESULT_FAIL:-102}
+XCCDF_RESULT[ERROR]=${XCCDF_RESULT_ERROR:-103}
+XCCDF_RESULT[UNKNOWN]=${XCCDF_RESULT_UNKNOWN:-104}
+XCCDF_RESULT[NOT_APPLICABLE]=${XCCDF_RESULT_NOT_APPLICABLE:-105}
+XCCDF_RESULT[NOT_CHECKED]=${XCCDF_RESULT_NOT_CHECKED:-106}
+XCCDF_RESULT[NOT_SELECTED]=${XCCDF_RESULT_NOT_SELECTED:-107}
+XCCDF_RESULT[INFORMATIONAL]=${XCCDF_RESULT_INFORMATIONAL:-108}
+XCCDF_RESULT[FIXED]=${XCCDF_RESULT_FIXED:-109}
+exit_with(){
+  set +o xtrace
+  local status=${1:-ERROR}}
+  local ec=${XCCDF_RESULT[${status}]:-${XCCDF_RESULT[ERROR]}}
+  echo "Exiting with status ${status}(${ec})"
+  exit ${ec}
+}
+trap 'exit_with ERROR' ERR
 set -o xtrace
 
 """
 
 SHELL_WRAPPER_TAIL = """
-exit_pass
+exit_with PASS
 """
 
 PYTHON_WRAPPER_HEAD1 = """#!/usr/bin/python
