@@ -6,8 +6,9 @@ import stat
 
 SHELL_WRAPPER_HEAD = """#!/bin/bash
 set -o errexit
-set -o pipefail
+set -o errtrace
 set -o nounset
+set -o pipefail
 declare -A XCCDF_RESULT
 XCCDF_RESULT[PASS]=${XCCDF_RESULT_PASS:-101}
 XCCDF_RESULT[FAIL]=${XCCDF_RESULT_FAIL:-102}
