@@ -51,7 +51,9 @@ class ConvertYamlAction(object):
             .add_group(group_info.get('id'))\
             .set_title(group_info.get('title'))
 
-        for filename in data.get('shared-files', []):
+        for item in data.get('shared-files', []):
+            filename = os.path.join(
+                os.path.dirname(parsed_args.filename), item)
             if not os.path.exists(filename):
                 raise Exception("Shared file '{}' not found"
                                 .format(filename))
