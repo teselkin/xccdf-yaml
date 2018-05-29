@@ -1,4 +1,5 @@
 import lxml.etree as etree
+from collections import OrderedDict
 
 
 def set_default_ns(element, default_ns=None, nsmap={}):
@@ -19,7 +20,9 @@ class XmlCommon(object):
         self._nsmap = nsmap
         self._ns = ns
         self._children = {}
-        self._attrs = {}
+        # Use OrderedDict for storing attributes to prevent changes in
+        # attributes ordering on each convertion.
+        self._attrs = OrderedDict()
         self._text = None
 
     def namespace(self, ns=None):
