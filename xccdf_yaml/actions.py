@@ -57,7 +57,7 @@ class ConvertYamlAction(object):
             if not os.path.exists(filename):
                 raise Exception("Shared file '{}' not found"
                                 .format(filename))
-            target = os.path.join(output_dir, filename)
+            target = os.path.join(output_dir, os.path.basename(filename))
             os.makedirs(os.path.dirname(target), exist_ok=True)
             shutil.copyfile(filename, target)
 
