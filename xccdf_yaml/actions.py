@@ -69,7 +69,7 @@ class ConvertYamlAction(object):
             profile.append_rule(res.rule, selected=True)
 
         filename = os.path.join(output_dir,
-                                '{}-xccdf.yaml'.format(benchmark_id))
+                                '{}-xccdf.xml'.format(benchmark_id))
 
         xml = benchmark.xml()
         xml_str = etree.tostring(xml, pretty_print=True).decode()
