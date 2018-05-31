@@ -4,7 +4,7 @@ import shutil
 import yaml
 import lxml.etree as etree
 
-from xccdf_yaml.common import YamlLoader
+from xccdf_yaml.yaml import YamlLoader
 from xccdf_yaml.xccdf import Benchmark
 
 from xccdf_yaml.parsers import PARSERS
