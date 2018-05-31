@@ -57,3 +57,12 @@ class YamlLoader(yaml.Loader):
                 stream.write('### {} ###\n'.format(filename))
                 stream.write(open(filename).read())
         return stream.getvalue()
+
+    def include(self, node):
+        filename = os.path.join(self._root, self.construct_scalar(node))
+
+        with open(filename, 'r') as f:
+            return yaml.load(f, YamlLoader)
+
+
+YamlLoader.add_constructor('!include', YamlLoader.include)

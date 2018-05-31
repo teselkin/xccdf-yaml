@@ -10,8 +10,8 @@ benchmark:
 
   # Files that should be copied to output directory in addition
   # to scripts generated from rules below.
-  shared-files:
-  - functions.sh
+#  shared-files:
+#  - functions.sh
 
   rules:
   - test_bin_true:
@@ -77,3 +77,4 @@ benchmark:
         raw: |
           def main():
               print("Hello World")
+  - !include test-bin-false.yaml
