@@ -1,6 +1,7 @@
 import os
 import html
 import shutil
+import yaml
 import lxml.etree as etree
 
 from xccdf_yaml.common import YamlLoader
@@ -14,8 +15,8 @@ class ConvertYamlAction(object):
         pass
 
     def take_action(self, parsed_args):
-        loader = YamlLoader()
-        data = loader.load(parsed_args.filename).get('benchmark')
+        data = yaml.load(open(parsed_args.filename), YamlLoader)
+        data = data.get('benchmark')
         if data is None:
             raise Exception('No benchmark section found')
 

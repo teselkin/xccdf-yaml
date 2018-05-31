@@ -6,7 +6,7 @@ import yaml
 import re
 
 from importlib import import_module
-from io import BytesIO
+from io import StringIO
 
 re_include = re.compile(r'^#%include%\s*(.*?)\s*$', re.MULTILINE)
 
@@ -48,14 +48,21 @@ class ClassLoader(object):
                     self._classes.setdefault(class_id, cls)
 
 
-class YamlLoader(object):
-    def load(self, filename):
-        tree = self.build_tree(filename)
-        files = self.compact_tree(tree)
-        data = self.load_yaml_files(files)
+class YamlLoader(yaml.Loader):
+    def __init__(self, stream):
+        try:
+            self._root = os.path.split(stream.name)[0]
+        except AttributeError:
+            self._root = os.path.curdir
+        super().__init__(self._load(stream.name))
+
+    def _load(self, filename):
+        tree = self._build_tree(filename)
+        files = self._compact_tree(tree)
+        data = self._load_yaml_files(files)
         return data
 
-    def parse_file(self, filename):
+    def _parse_file(self, filename):
         if not os.path.exists(filename):
             return []
 
@@ -66,17 +73,17 @@ class YamlLoader(object):
 
         return subimports
 
-    def build_tree(self, filename, tree=None, level=0):
+    def _build_tree(self, filename, tree=None, level=0):
         if tree is None:
             tree = {}
 
         tree.setdefault(level, []).append(filename)
-        for x in self.parse_file(filename):
-            self.build_tree(x, tree, level + 1)
+        for x in self._parse_file(filename):
+            self._build_tree(x, tree, level + 1)
 
         return tree
 
-    def compact_tree(self, tree):
+    def _compact_tree(self, tree):
         compacted = []
         for x in reversed(sorted(tree)):
             for name in tree[x]:
@@ -84,10 +91,10 @@ class YamlLoader(object):
                     compacted.append(name)
         return compacted
 
-    def load_yaml_files(self, files):
-        stream = BytesIO()
+    def _load_yaml_files(self, files):
+        stream = StringIO()
         for filename in files:
             if os.path.exists(filename):
-                stream.write('### {} ###\n'.format(filename).encode())
-                stream.write(open(filename).read().encode())
-        return yaml.load(stream.getvalue())
+                stream.write('### {} ###\n'.format(filename))
+                stream.write(open(filename).read())
+        return stream.getvalue()
