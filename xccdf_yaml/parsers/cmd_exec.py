@@ -10,6 +10,7 @@ set -o errtrace
 set -o nounset
 set -o pipefail
 declare -A XCCDF_RESULT
+XCCDF_RESULT[CONTINUE]=100
 XCCDF_RESULT[PASS]=${XCCDF_RESULT_PASS:-101}
 XCCDF_RESULT[FAIL]=${XCCDF_RESULT_FAIL:-102}
 XCCDF_RESULT[ERROR]=${XCCDF_RESULT_ERROR:-103}
@@ -26,7 +27,17 @@ exit_with(){
   echo "Exiting with status ${status}(${ec})"
   exit ${ec}
 }
-trap 'exit_with ERROR' ERR
+trap_error(){
+  local ec=${1:-0}
+  if [[ ${ec} == 100 ]]; then
+    return
+  elif [[ ${ec} -gt 100 -a ${ec} -lt 110 ]]; then
+    exit ${ec}
+  else
+    exit_with ERROR
+  fi
+}
+trap 'exit_error $?' ERR
 set -o xtrace
 
 """
