@@ -37,7 +37,7 @@ trap_error(){
     exit_with ERROR
   fi
 }
-trap 'exit_error $?' ERR
+trap 'trap_error $?' ERR
 set -o xtrace
 
 """
