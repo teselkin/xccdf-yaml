@@ -10,6 +10,15 @@ from xccdf_yaml.xccdf import Benchmark
 from xccdf_yaml.parsers import PARSERS
 
 
+def unlist(seq):
+    if isinstance(seq, list):
+        for x in seq:
+            for y in unlist(x):
+                yield y
+    else:
+        yield seq
+
+
 class ConvertYamlAction(object):
     def __init__(self):
         pass
@@ -62,7 +71,7 @@ class ConvertYamlAction(object):
             os.makedirs(os.path.dirname(target), exist_ok=True)
             shutil.copyfile(filename, target)
 
-        for item in data.get('rules', []):
+        for item in unlist(data.get('rules', [])):
             id, metadata = next(iter(item.items()))
             parser = PARSERS[metadata['type']](parsed_args, output_dir)
             res = parser.parse(id, metadata)
