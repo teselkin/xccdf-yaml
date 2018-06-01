@@ -1,0 +1,20 @@
+- test_bin_true_1:
+    type: cmd_exec
+    title: "Test /bin/true #1"
+    description: This is a test script
+    cmd: |
+      /bin/true
+
+- test_bin_true_2:
+    type: cmd_exec
+    title: "Test /bin/true #2"
+    description: This is a test script
+    cmd: |
+      /bin/true
+
+- test_bin_true_3:
+    type: cmd_exec
+    title: "Test /bin/true #3"
+    description: This is a test script
+    cmd: |
+      /bin/true
