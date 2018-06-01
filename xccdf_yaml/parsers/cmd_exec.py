@@ -31,7 +31,7 @@ trap_error(){
   local ec=${1:-0}
   if [[ ${ec} == 100 ]]; then
     return
-  elif [[ ${ec} -gt 100 -a ${ec} -lt 110 ]]; then
+  elif [[ ${ec} -gt 100 && ${ec} -lt 110 ]]; then
     exit ${ec}
   else
     exit_with ERROR
