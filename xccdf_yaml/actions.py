@@ -61,23 +61,34 @@ class ConvertYamlAction(object):
             .add_group(group_info.get('id'))\
             .set_title(group_info.get('title'))
 
+        shared_files = {}
         for item in data.get('shared-files', []):
             filename = os.path.join(
                 os.path.dirname(parsed_args.filename), item)
             if not os.path.exists(filename):
                 raise Exception("Shared file '{}' not found"
                                 .format(filename))
-            target = os.path.join(output_dir, os.path.basename(filename))
-            os.makedirs(os.path.dirname(target), exist_ok=True)
-            shutil.copyfile(filename, target)
+            shared_files[os.path.basename(filename)] = {'source': filename,}
 
         for item in unlist(data.get('rules', [])):
             id, metadata = next(iter(item.items()))
             parser_type = metadata.get('type', 'cmd_exec')
             parser = PARSERS[parser_type](parsed_args, output_dir)
             res = parser.parse(id, metadata)
+            for shared_file, data in res.shared_files:
+                shared_files.setdefault(shared_file, {})
+                shared_files[shared_file].update(data)
             group.append_rule(res.rule)
             profile.append_rule(res.rule, selected=True)
+
+        for shared_file, data in shared_files.items():
+            target = os.path.join(output_dir, os.path.basename(shared_file))
+            os.makedirs(os.path.dirname(target), exist_ok=True)
+            if 'source' in data:
+                shutil.copyfile(data['source'], target)
+            elif 'content' in data:
+                with open(target, 'w') as f:
+                    f.write(data['content'])
 
         filename = os.path.join(output_dir,
                                 '{}-xccdf.xml'.format(benchmark_id))

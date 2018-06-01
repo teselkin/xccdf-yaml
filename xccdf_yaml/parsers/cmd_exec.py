@@ -38,7 +38,6 @@ trap_error(){
 }
 trap 'trap_error $?' ERR
 set -o xtrace
-
 """
 
 SHELL_WRAPPER_TAIL = """
@@ -105,12 +104,15 @@ class CmdExecParser(object):
                 .set_text(metadata['rationale'].rstrip())
 
         if 'cmd' in metadata:
+            res.add_shared_file('wrapper-head.sh', SHELL_WRAPPER_HEAD)
+            res.add_shared_file('wrapper-tail.sh', SHELL_WRAPPER_TAIL)
             filename = '{}.sh'.format(id)
             target_filename = os.path.join(self.output_dir, filename)
             with open(target_filename, 'w') as f:
-                f.write(SHELL_WRAPPER_HEAD)
-                f.write('{}\n'.format(metadata['cmd']))
-                f.write(SHELL_WRAPPER_TAIL)
+                f.write('#!/bin/bash')
+                f.write('\nsource wrapper-head.sh\n')
+                f.write(metadata['cmd'])
+                f.write('\nsource wrapper-tail.sh\n')
         elif 'python' in metadata:
             filename = '{}.py'.format(id)
             target_filename = os.path.join(self.output_dir, filename)
