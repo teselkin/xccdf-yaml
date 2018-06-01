@@ -73,7 +73,8 @@ class ConvertYamlAction(object):
 
         for item in unlist(data.get('rules', [])):
             id, metadata = next(iter(item.items()))
-            parser = PARSERS[metadata['type']](parsed_args, output_dir)
+            parser_type = metadata.get('type', 'cmd_exec')
+            parser = PARSERS[parser_type](parsed_args, output_dir)
             res = parser.parse(id, metadata)
             group.append_rule(res.rule)
             profile.append_rule(res.rule, selected=True)
