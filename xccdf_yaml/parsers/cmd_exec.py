@@ -5,7 +5,6 @@ import stat
 
 
 SHELL_WRAPPER_HEAD = """#!/bin/bash
-set -o errexit
 set -o errtrace
 set -o nounset
 set -o pipefail
@@ -34,7 +33,7 @@ trap_error(){
   elif [[ ${ec} -gt 100 && ${ec} -lt 110 ]]; then
     exit ${ec}
   else
-    exit_with ERROR
+    exit ${XCCDF_RESULT[ERROR]}
   fi
 }
 trap 'trap_error $?' ERR
