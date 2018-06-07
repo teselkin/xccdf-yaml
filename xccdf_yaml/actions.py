@@ -7,6 +7,7 @@ import lxml.etree as etree
 
 from xccdf_yaml.yaml import YamlLoader
 from xccdf_yaml.xccdf import Benchmark
+from xccdf_yaml.oval import OvalDefinitions
 
 from xccdf_yaml.parsers import PARSERS
 
@@ -52,6 +53,12 @@ class ConvertYamlAction(object):
     def __init__(self):
         pass
 
+    def extend_oval(self, oval, result):
+        oval.append_definition(result.definition)
+        oval.extend_tests(result.tests)
+        oval.extend_objects(result.objects)
+        oval.extend_states(result.states)
+
     def take_action(self, parsed_args):
         data = yaml.load(open(parsed_args.filename), YamlLoader)
         data = data.get('benchmark')
@@ -91,6 +98,10 @@ class ConvertYamlAction(object):
             .set_title(group_info.get('title'))
 
         shared_files = {}
+
+        oval = OvalDefinitions()
+        oval_ref = '{}-oval.xml'.format(benchmark_id)
+
         for item in data.get('shared-files', []):
             filename = os.path.join(
                 os.path.dirname(parsed_args.filename), item)
@@ -109,6 +120,13 @@ class ConvertYamlAction(object):
                 shared_files[shared_file].update(data)
             group.append_rule(res.rule)
             profile.append_rule(res.rule, selected=True)
+            if res.has_oval_data:
+                res.rule.add_check()\
+                    .check_content_ref({
+                        'name': res.definition.get_attr('id'),
+                        'href': oval_ref,
+                    })
+                self.extend_oval(oval, res)
 
         for shared_file, data in shared_files.items():
             target = os.path.join(output_dir, os.path.basename(shared_file))
@@ -119,18 +137,29 @@ class ConvertYamlAction(object):
                 with open(target, 'w') as f:
                     f.write(data['content'])
 
-        filename = os.path.join(output_dir,
+        benchmark_filename = os.path.join(output_dir,
                                 '{}-xccdf.xml'.format(benchmark_id))
 
-        xml = benchmark.xml()
-        xml_str = etree.tostring(xml, pretty_print=True).decode()
+        benchmark_xml = benchmark.xml()
+        benchmark_xml_str = etree.tostring(benchmark_xml,
+                                           pretty_print=True).decode()
 
         if parsed_args.unescape:
-            xml_str = html.unescape(xml_str)
+            benchmark_xml_str = html.unescape(benchmark_xml_str)
 
-        with open(filename, 'w') as f:
+        if not oval.is_empty():
+            oval_filename = os.path.join(output_dir, oval_ref)
+            oval_xml = oval.xml()
+            oval_xml_str = etree.tostring(oval_xml,
+                                          pretty_print=True).decode()
+            with open(oval_filename, 'w') as f:
+                f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
+                f.write(oval_xml_str)
+
+
+        with open(benchmark_filename, 'w') as f:
             f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
-            f.write(xml_str)
+            f.write(benchmark_xml_str)
 
         return
 

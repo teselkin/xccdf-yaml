@@ -36,6 +36,10 @@ class OvalDefinitions(XmlBase):
         self._objects = []
         self._states = []
 
+    def is_empty(self):
+        return not any([self._definitions, self._tests,
+                        self._objects, self._states])
+
     def add_definition(self, id):
         definition = Definition(id)
         self._definitions.append(definition)
@@ -56,29 +60,71 @@ class OvalDefinitions(XmlBase):
         self._states.append(instance)
         return instance
 
+    def append_definition(self, item):
+        self._definitions.append(item)
+        return self
+
+    def append_test(self, item):
+        self._tests.append(item)
+        return self
+
+    def append_object(self, item):
+        self._objects.append(item)
+        return self
+
+    def append_state(self, item):
+        self._states.append(item)
+        return self
+
+    def extend_definitions(self, items):
+        self._definitions.extend(items)
+        return self
+
+    def extend_tests(self, items):
+        self._tests.extend(items)
+        return self
+
+    def extend_objects(self, items):
+        self._objects.extend(items)
+        return self
+
+    def extend_states(self, items):
+        self._states.extend(items)
+        return self
+
     def update_elements(self):
         self.remove_elements(name='definitions')
-        definitions = self.sub_element('definitions')
-        for x in self._definitions:
-            definitions.append(x)
+        if len(self._definitions) > 0:
+            definitions = self.sub_element('definitions')
+            for x in self._definitions:
+                definitions.append(x)
 
         self.remove_elements(name='tests')
-        tests = self.sub_element('tests')
-        for x in self._tests:
-            tests.append(x)
+        if len(self._tests) > 0:
+            tests = self.sub_element('tests')
+            for x in self._tests:
+                tests.append(x)
 
         self.remove_elements(name='objects')
-        objects  = self.sub_element('objects')
-        for x in self._objects:
-            objects.append(x)
+        if len(self._objects) > 0:
+            objects  = self.sub_element('objects')
+            for x in self._objects:
+                objects.append(x)
 
         self.remove_elements(name='states')
-        states = self.sub_element('states')
-        for x in self._states:
-            states.append(x)
+        if len(self._states) > 0:
+            states = self.sub_element('states')
+            for x in self._states:
+                states.append(x)
 
 
 class Generator(XmlBase):
+    __elements_order__ = (
+        'product_name',
+        'product_version',
+        'schema_version',
+        'timestamp',
+    )
     def __init__(self):
         super().__init__('generator')
 
@@ -87,13 +133,19 @@ class Generator(XmlBase):
         self.sub_element('product_version', ns='oval-common').set_text('0.1')
         self.sub_element('schema_version', ns='oval-common').set_text('5.11')
         self.sub_element('timestamp', ns='oval-common')\
-            .set_text(str(datetime.datetime.now()))
+            .set_text(datetime.datetime.now().isoformat())
 
 
 class Definition(XmlBase):
+    __elements_order__ = (
+        'metadata',
+        'criteria',
+    )
     def __init__(self, id, version='1', class_name='compliance'):
         super().__init__('definition')
         self.set_attr('id', id)
+        self.set_attr('version', version)
+        self.set_attr('class', class_name)
         self._metadata = None
         self._criteria = []
 
@@ -118,6 +170,11 @@ class Definition(XmlBase):
 
 
 class Metadata(XmlBase):
+    __elements_order__ = (
+        'title',
+        'affected',
+        'description',
+    )
     def __init__(self):
         super().__init__('metadata')
 
@@ -150,6 +207,7 @@ class Criteria(XmlBase):
         super().__init__('criteria')
         self.set_attr('operator', operator)
         self._criterion = []
+        self._criteria = []
 
     def add_criterion(self, instance):
         self._criterion.append(instance)
@@ -160,9 +218,16 @@ class Criteria(XmlBase):
         self._criterion.append(criterion)
         return criterion
 
+    def add_criteria(self, instance):
+        self._criteria.append(instance)
+        return instance
+
     def update_elements(self):
         self.remove_elements(name='criterion')
         for x in self._criterion:
+            self.append(x)
+        self.remove_elements(name='criteria')
+        for x in self._criteria:
             self.append(x)
 
 
@@ -173,14 +238,21 @@ class Criterion(XmlBase):
 
 
 class OvalTest(XmlBase):
-    def __init__(self, id, name, ns=None):
+    def __init__(self, id, name, check='all', check_existence='all_exist',
+                 version='1', ns=None):
         super().__init__(name, ns=ns)
-        self.set_attr('id', id)
+        self.set_attrs({
+            'id': id,
+            'check': check,
+            'check_existence': check_existence,
+            'version': version,
+        })
+        self.set_attr('comment', 'Test {}'.format(id))
+        #self.set_attr('id', id)
         self._objects = set()
         self._states = set()
 
     def add_object(self, instance):
-        print(repr(instance))
         self._objects.add(instance)
 
     def add_state(self, instance):
@@ -199,12 +271,18 @@ class OvalTest(XmlBase):
 
 
 class OvalObject(XmlBase):
-    def __init__(self, id, name, ns=None):
+    def __init__(self, id, name, ns=None, version='1'):
         super().__init__(name, ns=ns)
-        self.set_attr('id', id)
+        self.set_attrs({
+            'id': id,
+            'version': version,
+        })
 
 
 class OvalState(XmlBase):
-    def __init__(self, id, name, ns=None):
+    def __init__(self, id, name, ns=None, version='1'):
         super().__init__(name, ns=ns)
-        self.set_attr('id', id)
+        self.set_attrs({
+            'id': id,
+            'version': version,
+        })

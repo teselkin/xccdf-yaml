@@ -41,3 +41,7 @@ class ParsedObjects(object):
     @property
     def shared_files(self):
         return self._shared_files.items()
+
+    @property
+    def has_oval_data(self):
+        return any([self.definition, self.states, self.states, self.tests])
