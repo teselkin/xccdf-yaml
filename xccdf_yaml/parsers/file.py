@@ -17,14 +17,17 @@ class FileParser(GenericParser):
 
     @staticmethod
     def __parse_mode__(mode):
+        mode = '{:0>4}'.format(mode)
         bit_names = [
+        'suid', 'sgid', 'sticky',
         'uread', 'uwrite', 'uexec',
         'gread', 'gwrite', 'gexec',
         'oread', 'owrite', 'oexec',
         ]
         bit_string = ''.join([
             '{0:03b}'.format(int(i)) for i in str(mode)])
-        bit_values = [str(x == '1').lower() for x in bit_string][:9]
+        bit_values = [str(x == '1').lower()
+                      for x in bit_string][:len(bit_names)]
         return OrderedDict(zip(bit_names, bit_values))
 
     def parse(self, id, metadata):
@@ -46,14 +49,17 @@ class FileParser(GenericParser):
         # states and tests
         if 'mode' in metadata:
             mode = str(metadata['mode'])
-            if len(mode) != 3:
-                raise Exception('mode must be 3 digits')
+            if not str(mode).isdecimal():
+                raise ValueError("mode must be decimal")
+            if 4 < len(mode) < 1:
+                raise ValueError("mode must be at least 1 and up to 4 digits")
             modes = self.__parse_mode__(mode)
             tid = 'oval:{}_mode:tst:1'.format(id)
             sid = 'oval:{}_mode:ste:1'.format(id)
             # State
             state = OvalState(sid, 'file_state', ns=self.__ns__)
             state.__elements_order__ = (
+                'suid', 'sgid', 'sticky',
                 'uread', 'uwrite', 'uexec',
                 'gread', 'gwrite', 'gexec',
                 'oread', 'owrite', 'oexec',
