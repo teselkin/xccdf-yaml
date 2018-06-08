@@ -24,7 +24,7 @@ class FileParser(GenericParser):
         ]
         bit_string = ''.join([
             '{0:03b}'.format(int(i)) for i in str(mode)])
-        bit_values = [str(x == '1').lower() for x in bit_string]
+        bit_values = [str(x == '1').lower() for x in bit_string][:9]
         return OrderedDict(zip(bit_names, bit_values))
 
     def parse(self, id, metadata):
