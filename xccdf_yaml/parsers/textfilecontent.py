@@ -26,9 +26,9 @@ class TextfilecontentParser(GenericParser):
         did = 'oval:{}:def:1'.format(id)
 
         if not 'filename' in metadata:
-            raise Exception('filename must be set')
+            raise KeyError('filename must be set')
         if 'pattern' not in metadata:
-            raise Exception('pattern must be set')
+            raise KeyError('pattern must be set')
 
         filenames = []
         if isinstance(metadata['filename'], str):
@@ -36,7 +36,7 @@ class TextfilecontentParser(GenericParser):
         elif isinstance(metadata['filename'], list):
             filenames = metadata['filename']
         else:
-            raise Exception('Unsupported filename format')
+            raise ValueError('Unsupported filename format')
 
         pattern = metadata['pattern']
 

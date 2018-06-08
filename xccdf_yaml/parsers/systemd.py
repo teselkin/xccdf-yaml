@@ -23,7 +23,7 @@ class SystemdParser(GenericParser):
         did = 'oval:{}:def:1'.format(id)
 
         if 'name' not in metadata:
-            raise Exception('name of service must be set')
+            raise KeyError('name of service must be set')
 
         name = metadata['name']
         target = metadata.get('target', 'multi-user.target')

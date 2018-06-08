@@ -28,7 +28,7 @@ class DpkginfoParser(GenericParser):
             pkgname = obj.sub_element('name').set_text(metadata['name'])
             res.objects.append(obj)
         else:
-            raise Exception('name must be set')
+            raise KeyError('name must be set')
 
         # State
         state = OvalState(sid, 'dpkginfo_state', ns=self.__ns__)
@@ -44,7 +44,7 @@ class DpkginfoParser(GenericParser):
             elif operation == 'gt':
                 operation = 'greater than'
             else:
-                raise Exception('Unsupported pkg version matching')
+                raise ValueError('Unsupported pkg version matching')
             evr = state.sub_element('evr').set_text(version)
             evr.set_attrs({
                 'datatype': 'evr_string',
