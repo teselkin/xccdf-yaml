@@ -10,6 +10,7 @@ from xccdf_yaml.oval import OvalDefinitions
 
 from xccdf_yaml.actions import ConvertYamlAction
 from xccdf_yaml.actions import LoadYamlAction
+from xccdf_yaml.actions import ValidateYamlAction
 
 
 class CliConvertYaml(Command):
@@ -43,6 +44,24 @@ class CliLoadYaml(Command):
 
     def take_action(self, parsed_args):
         action = LoadYamlAction()
+        return action.take_action(parsed_args)
+
+
+class CliValidateYaml(Command):
+    log = logging.getLogger(__name__)
+
+    def get_parser(self, prog_name):
+        parser = super().get_parser(prog_name)
+        parser.add_argument('--schema')
+        parser.add_argument('--schema-type', dest='schema_type',
+                            action='store',
+                            choices=['auto', 'json', 'yaml'],
+                            default='auto')
+        parser.add_argument('filename')
+        return parser
+
+    def take_action(self, parsed_args):
+        action = ValidateYamlAction()
         return action.take_action(parsed_args)
 
 

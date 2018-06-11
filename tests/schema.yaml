@@ -1,0 +1,9 @@
+%YAML 1.1
+---
+"$schema": "http://json-schema.org/draft-06/schema#"
+title: Validation schema for testing purposes
+description: |
+  This simple schema ONLY tests that data passed to it is an object
+  Please create your own schema for documents you need to validate.
+type: object
+additionalProperties: true

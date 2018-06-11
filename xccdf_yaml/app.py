@@ -11,6 +11,7 @@ class XCCDF_YAML_Manager(CommandManager):
     SHELL_COMMANDS = {
         'convert': cli.CliConvertYaml,
         'load': cli.CliLoadYaml,
+        'validate': cli.CliValidateYaml,
         'about-parser': cli.CliAboutParser,
         'list-parsers': cli.CliListParsers,
         'test-xccdf': cli.CliTestXccdf,

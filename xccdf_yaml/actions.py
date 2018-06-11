@@ -10,6 +10,8 @@ from xccdf_yaml.xccdf import Benchmark
 
 from xccdf_yaml.parsers import PARSERS
 
+from jsonschema import validate
+
 
 def unlist(seq):
     if isinstance(seq, list):
@@ -18,6 +20,32 @@ def unlist(seq):
                 yield y
     else:
         yield seq
+
+
+class ValidateYamlAction(object):
+    def take_action(self, parsed_args):
+        data = yaml.load(open(parsed_args.filename), YamlLoader)
+
+        if parsed_args.schema_type == 'auto':
+            _, ext = os.path.splitext(parsed_args.schema.lower())
+            if ext in ['.json', ]:
+                schema_type = 'json'
+            elif ext in ['.yaml', '.yml', ]:
+                schema_type = 'yaml'
+            else:
+                raise Exception("Unable to detect schema type for '{}'"
+                                .format(parsed_args.schema))
+        else:
+            schema_type = parsed_args.schema_type
+
+        if schema_type == 'json':
+            schema = json.load(open(parsed_args.schema))
+        elif schema_type == 'yaml':
+            schema = yaml.load(open(parsed_args.schema))
+        else:
+            raise Exception("Bad schema type '{}'".format(schema_type))
+
+        validate(data, schema)
 
 
 class ConvertYamlAction(object):
