@@ -2,3 +2,5 @@ lxml
 cliff
 markdown
 jsonschema
+cpe
+

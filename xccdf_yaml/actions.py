@@ -76,7 +76,11 @@ class ConvertYamlAction(object):
 
         platform = data.get('platform')
         if platform:
-            benchmark.add_platform(platform.rstrip())
+            if isinstance(platform, list):
+                for platform_str in platform:
+                    benchmark.add_platform(platform_str.rstrip())
+            else:
+                benchmark.add_platform(platform.rstrip())
 
         profile_info = data.get('profile', {
             'id': 'default',
@@ -114,6 +118,8 @@ class ConvertYamlAction(object):
             id, metadata = next(iter(item.items()))
             parser_type = metadata.get('type', 'cmd_exec')
             parser = PARSERS[parser_type](parsed_args, output_dir)
+            if platform and not metadata.get('affected', False):
+                metadata['affected'] = platform
             res = parser.parse(id, metadata)
             for shared_file, data in res.shared_files:
                 shared_files.setdefault(shared_file, {})

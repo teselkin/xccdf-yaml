@@ -8,6 +8,7 @@ from xccdf_yaml.oval import OvalState
 from xccdf_yaml.oval import Criterion
 from xccdf_yaml.oval import Metadata
 from xccdf_yaml.oval import NSMAP
+from xccdf_yaml.cpe import get_affected_from_cpe
 
 from collections import OrderedDict
 
@@ -45,6 +46,8 @@ class FileParser(GenericParser):
             res.objects.append(obj)
         else:
             raise KeyError('filename must be set')
+
+        affected = metadata.get('affected', 'Ubuntu 1604')
 
         # states and tests
         if 'mode' in metadata:
@@ -126,7 +129,12 @@ class FileParser(GenericParser):
         metadata = definition.add_metadata()
         metadata.set_title(str(id))
         metadata.set_description('Check for {}'.format(id))
-        metadata.set_affected('unix', 'Ubuntu 1604')
+        if isinstance(affected, list):
+            for affect in affected:
+                metadata.set_affected('unix', get_affected_from_cpe(affect))
+        else:
+            metadata.set_affected('unix', get_affected_from_cpe(affected))
+
 
         criteria = definition.add_criteria()
         for test in res.tests:
