@@ -1,6 +1,7 @@
 import os
 import html
 import shutil
+import json
 import yaml
 import lxml.etree as etree
 
@@ -104,3 +105,31 @@ class ConvertYamlAction(object):
             f.write(xml_str)
 
         return
+
+
+class LoadYamlAction(object):
+    def take_action(self, parsed_args):
+        data = yaml.load(open(parsed_args.filename), YamlLoader)
+
+        result = None
+        if parsed_args.format == 'json':
+            if parsed_args.pretty:
+                result = json.dumps(data,
+                                    indent=parsed_args.indent,
+                                    sort_keys=True)
+            else:
+                result = json.dumps(data)
+        elif parsed_args.format == 'yaml':
+            if parsed_args.pretty:
+                result = yaml.dump(data,
+                                   default_flow_style=False,
+                                   indent=parsed_args.indent)
+            else:
+                result = yaml.dump(data)
+
+        if parsed_args.output:
+            with open(parsed_args.output, 'w') as f:
+                f.write(result)
+            return
+
+        return result

@@ -9,6 +9,7 @@ from xccdf_yaml.xccdf import Benchmark
 from xccdf_yaml.oval import OvalDefinitions
 
 from xccdf_yaml.actions import ConvertYamlAction
+from xccdf_yaml.actions import LoadYamlAction
 
 
 class CliConvertYaml(Command):
@@ -24,6 +25,24 @@ class CliConvertYaml(Command):
 
     def take_action(self, parsed_args):
         action = ConvertYamlAction()
+        return action.take_action(parsed_args)
+
+
+class CliLoadYaml(Command):
+    log = logging.getLogger(__name__)
+
+    def get_parser(self, prog_name):
+        parser = super().get_parser(prog_name)
+        parser.add_argument('--format', dest='format', action='store',
+                            choices=['json', 'yaml'], default='json')
+        parser.add_argument('--indent', type=int, default=2)
+        parser.add_argument('--pretty', action='store_true')
+        parser.add_argument('--output')
+        parser.add_argument('filename')
+        return parser
+
+    def take_action(self, parsed_args):
+        action = LoadYamlAction()
         return action.take_action(parsed_args)
 
 

@@ -10,6 +10,7 @@ from cliff.commandmanager import CommandManager
 class XCCDF_YAML_Manager(CommandManager):
     SHELL_COMMANDS = {
         'convert': cli.CliConvertYaml,
+        'load': cli.CliLoadYaml,
         'about-parser': cli.CliAboutParser,
         'list-parsers': cli.CliListParsers,
         'test-xccdf': cli.CliTestXccdf,
