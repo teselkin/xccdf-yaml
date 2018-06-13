@@ -80,7 +80,12 @@ class TextfilecontentParser(GenericParser):
             # Test
             test = OvalTest('oval:{}_{}:tst:1'.format(id, idx),
                             'textfilecontent54_test', ns=self.__ns__)
-            exists = 'all_exist' if metadata['match'] else 'none_exist'
+
+            if metadata.get('match', True):
+                exists = 'all_exist'
+            else:
+                exists = 'none_exist'
+
             test.set_attr('check_existence', exists)
             test.add_object(obj)
             res.tests.append(test)
