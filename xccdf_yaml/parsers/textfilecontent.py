@@ -6,13 +6,13 @@ from xccdf_yaml.oval import OvalObject
 from xccdf_yaml.oval import OvalTest
 from xccdf_yaml.oval import Criterion
 from xccdf_yaml.oval import Metadata
-from xccdf_yaml.oval import NSMAP
 from xccdf_yaml.cpe import get_affected_from_cpe
 
 import os
 
 class TextfilecontentParser(GenericParser):
     __id__ = 'pattern_match'
+    __ns__ = 'oval-def-indep'
 
     def parse(self, id, metadata):
         res = ParsedObjects()
@@ -23,8 +23,6 @@ class TextfilecontentParser(GenericParser):
 
         if 'description' in metadata:
             rule.set_description(metadata['title'])
-
-        did = 'oval:{}:def:1'.format(id)
 
         if not 'filename' in metadata:
             raise KeyError('filename must be set')
@@ -44,35 +42,51 @@ class TextfilecontentParser(GenericParser):
 
         for idx, f in enumerate(filenames):
             # Object
-            oid = 'oval:{}_{}:obj:1'.format(id, idx)
             path, filename = os.path.split(f)
-            filename = '^{}$'.format(filename)
-            obj = OvalObject(oid, 'textfilecontent54_object', ns='oval-def-indep')
+
+            # If filename not a regular expression
+            if not filename.startswith('^'):
+                filename = '^{}'.format(filename)
+            if not filename.endswith('$'):
+                filename = '{}$'.format(filename)
+
+            obj = OvalObject('oval:{}_{}:obj:1'.format(id, idx),
+                             'textfilecontent54_object', ns=self.__ns__)
+
             obj.__elements_order__ = (
                 'path',
                 'filename',
                 'pattern',
                 'instance',
             )
-            fpath = obj.sub_element('path').set_text(path)
-            fname = obj.sub_element('filename').set_text(filename)
-            fname.set_attr('operation', 'pattern match')
-            pattern = obj.sub_element('pattern').set_text(pattern)
-            pattern.set_attr('operation', 'pattern match')
-            instance = obj.sub_element('instance').set_text('1')
-            instance.set_attr('datatype', 'int')
+
+            obj.sub_element('path')\
+                .set_text(path)
+
+            obj.sub_element('filename')\
+                .set_text(filename)\
+                .set_attr('operation', 'pattern match')
+
+            obj.sub_element('pattern')\
+                .set_text(pattern)\
+                .set_attr('operation', 'pattern match')
+
+            obj.sub_element('instance')\
+                .set_text('1')\
+                .set_attr('datatype', 'int')
+
             res.objects.append(obj)
 
             # Test
-            tid = 'oval:{}_{}:tst:1'.format(id, idx)
-            test = OvalTest(tid, 'textfilecontent54_test', ns='oval-def-indep')
+            test = OvalTest('oval:{}_{}:tst:1'.format(id, idx),
+                            'textfilecontent54_test', ns=self.__ns__)
             exists = 'all_exist' if metadata['match'] else 'none_exist'
             test.set_attr('check_existence', exists)
             test.add_object(obj)
             res.tests.append(test)
 
         # definition
-        definition = Definition(did)
+        definition = Definition('oval:{}:def:1'.format(id))
 
         metadata = definition.add_metadata()
         metadata.set_title(str(id))
