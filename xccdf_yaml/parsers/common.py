@@ -2,8 +2,9 @@ from xccdf_yaml.xccdf import BenchmarkRule
 
 
 class GenericParser(object):
-    def __init__(self):
-        pass
+    def __init__(self, parsed_args=None, output_dir=None):
+        self.parsed_args = parsed_args
+        self.output_dir = output_dir or parsed_args.output_dir
 
     @classmethod
     def name(cls):
