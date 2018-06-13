@@ -84,6 +84,10 @@ benchmark:
         url: 'https://www.google.ru/\
           search?q=qwe'
 
+      export:
+      - value_1
+      - value_2: value2
+
       # cmd_exec parser supports shell scripts (bash) and python scripts.
       # Only one script should be defined. In case there are both 'cmd' will be used.
       # Shell script can be provided with 'cmd' key.

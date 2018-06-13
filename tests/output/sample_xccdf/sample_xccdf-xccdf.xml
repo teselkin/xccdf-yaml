@@ -48,6 +48,8 @@
       <rationale>Test script rationale</rationale>
       <check system="http://open-scap.org/page/SCE">
         <check-import import-name="stdout"/>
+        <check-export value-id="value_1" export-name="VALUE_1"/>
+        <check-export value-id="value_2" export-name="value2"/>
         <check-content-ref href="test_bin_true.sh"/>
       </check>
     </Rule>
