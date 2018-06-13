@@ -57,6 +57,11 @@ class DpkginfoParser(GenericParser):
 
         # Test
         test = OvalTest(tid, 'dpkginfo_test', ns=self.__ns__)
+        if metadata.get('removed', False):
+            check_existence = 'none_exist'
+        else:
+            check_existence = 'all_exist'
+        test.set_attr('check_existence', check_existence)
         test.add_object(obj)
         res.tests.append(test)
 
