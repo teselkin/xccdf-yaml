@@ -10,7 +10,6 @@ from xccdf_yaml.oval import Metadata
 from xccdf_yaml.cpe import get_affected_from_cpe
 
 class FileParser(GenericParser):
-    __id__ = 'file'
     __ns__ = 'oval-def-unix'
 
     @staticmethod
@@ -99,7 +98,7 @@ class FileParser(GenericParser):
                     raise ValueError('UID must be positive decimal')
                 tid = 'oval:{}_uid:tst:1'.format(uid)
                 # State
-                state = OvalState('oval:{}_uid_{}:ste:1'.format(uid, idx),
+                state = OvalState('oval:{}_uid_{}:ste:1'.format(id, idx),
                                   'file_state', ns=self.__ns__)
 
                 state.sub_element('user_id')\
@@ -110,7 +109,7 @@ class FileParser(GenericParser):
                 res.states.append(state)
 
                 # Test
-                test = OvalTest('oval:{}_uid_{}:tst:1'.format(uid, idx),
+                test = OvalTest('oval:{}_uid_{}:tst:1'.format(id, idx),
                                 'file_test', ns=self.__ns__)
                 test.__elements_order__ = (
                     'object',
@@ -125,7 +124,7 @@ class FileParser(GenericParser):
                 if int(gid) < 0 or not gid.isdecimal():
                     raise ValueError('GID must be positive decimal')
                 # State
-                state = OvalState('oval:{}_gid:ste:1'.format(sid, idx),
+                state = OvalState('oval:{}_gid_{}:ste:1'.format(id, idx),
                                   'file_state', ns=self.__ns__)
 
                 state.sub_element('group_id')\
@@ -136,7 +135,7 @@ class FileParser(GenericParser):
                 res.states.append(state)
 
                 # Test
-                test = OvalTest('oval:{}_uid:tst:1'.format(uid, idx),
+                test = OvalTest('oval:{}_gid_{}:tst:1'.format(id, idx),
                                 'file_test', ns=self.__ns__)
                 test.__elements_order__ = (
                     'object',
