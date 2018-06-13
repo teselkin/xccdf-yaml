@@ -1,5 +1,6 @@
 import lxml.etree as etree
 from collections import OrderedDict
+from operator import itemgetter
 
 
 def set_default_ns(element, default_ns=None, nsmap={}):
@@ -82,7 +83,8 @@ class XmlCommon(object):
     def set_attrs(self, *args, **kwargs):
         attrs = dict(zip(('attrs',), args)).get('attrs', {})
         attrs.update(kwargs)
-        self._attrs.update(attrs)
+        for key, value in sorted(attrs.items(), key=itemgetter(0)):
+            self._attrs[key] = value
         return self
 
     def update_elements(self):
