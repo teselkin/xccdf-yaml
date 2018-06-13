@@ -1,7 +1,7 @@
 import lxml.etree as etree
 import markdown
 
-
+from collections import OrderedDict
 from xccdf_yaml.xml import XmlCommon
 from xccdf_yaml.xml import set_default_ns
 
@@ -49,8 +49,8 @@ class Benchmark(XmlBase, SetTitleMixin, SetDescriptionMixin):
         'version',
         'metadata',
         'Profile',
-        'Group',
         'Value',
+        'Group',
         'Rule',
     )
 
@@ -58,6 +58,7 @@ class Benchmark(XmlBase, SetTitleMixin, SetDescriptionMixin):
         super().__init__('Benchmark')
         self._profiles = []
         self._groups = []
+        self._values = []
         self.set_attr('id', id)
         self.set_status(status, status_date)
         self.set_version(version)
@@ -85,9 +86,18 @@ class Benchmark(XmlBase, SetTitleMixin, SetDescriptionMixin):
         self._groups.append(group)
         return group
 
+    def new_value(self, id):
+        instance = XccdfValue(id)
+        self._values.append(instance)
+        return instance
+
     def update_elements(self):
         self.remove_elements(name='Profile')
         for x in self._profiles:
+            self.append(x)
+
+        self.remove_elements(name='Value')
+        for x in self._values:
             self.append(x)
 
         self.remove_elements(name='Group')
@@ -197,3 +207,102 @@ class XccdfCheck(XmlBase):
         attrs.update(kwargs)
         self.sub_element('check-content-ref').set_attrs(attrs)
         return self
+
+
+class XccdfValue(XmlBase, SetTitleMixin, SetDescriptionMixin):
+    __elements_order__ = (
+        'title',
+        'description',
+        'value',
+        'default',
+        'match',
+        'lower-bound',
+        'upper-bound',
+    )
+
+    def __init__(self, id, value_type=None, operator=None):
+        super().__init__('Value')
+        self.set_attr('id', id)
+        if value_type:
+            self.set_attr('type', value_type)
+        if operator:
+            self.set_attr('operator', operator)
+        self._value = OrderedDict()
+        self._default_value = OrderedDict()
+        self._match = OrderedDict()
+        self._lower_bound = OrderedDict()
+        self._upper_bound = OrderedDict()
+
+    def set_value(self, value, selector=None):
+        if selector in self._value:
+            raise Exception("Value with selector '{}' already set"
+                            .format(selector))
+        element = self.sub_element('value').set_text(str(value))
+        if selector is not None:
+            element.set_attr('selector', selector)
+        self._value[selector] = element
+
+    def set_default(self, value, selector=None):
+        if selector in self._default_value:
+            raise Exception("Default value with selector '{}' already set"
+                            .format(selector))
+        element = self.sub_element('default').set_text(str(value))
+        if selector is not None:
+            element.set_attr('selector', selector)
+        self._default_value[selector] = element
+
+    def set_match(self, value, selector=None):
+        if selector in self._match:
+            raise Exception("Match with selector '{}' already set"
+                            .format(selector))
+        element = self.sub_element('value').set_text(str(value))
+        if selector is not None:
+            element.set_attr('selector', selector)
+        self._match[selector] = element
+
+    def set_lower_bound(self, value, selector=None):
+        if selector in self._lower_bound:
+            raise Exception("Lower bound with selector '{}' already set"
+                            .format(selector))
+        element = self.sub_element('lower-bound').set_text(str(value))
+        if selector is not None:
+            element.set_attr('selector', selector)
+        self._lower_bound[selector] = element
+
+    def set_upper_bound(self, value, selector=None):
+        if selector in self._upper_bound:
+            raise Exception("Upper bound with selector '{}' already set"
+                            .format(selector))
+        element = self.sub_element('upper-bound').set_text(str(value))
+        if selector is not None:
+            element.set_attr('selector', selector)
+        self._upper_bound[selector] = element
+
+    def set_type(self, value):
+        self.set_attr('type', value.lower())
+        return self
+
+    def set_operator(self, value):
+        self.set_attr('operator', value.lower())
+        return self
+
+    def update_elements(self):
+        self.remove_elements(name='value')
+        for x in self._value.values():
+            self.append(x)
+
+        self.remove_elements(name='default')
+        for x in self._default_value.values():
+            self.append(x)
+
+        self.remove_elements(name='match')
+        for x in self._match.values():
+            self.append(x)
+
+        self.remove_elements(name='lower-bound')
+        for x in self._lower_bound.values():
+            self.append(x)
+
+        self.remove_elements(name='upper-bound')
+        for x in self._upper_bound.values():
+            self.append(x)

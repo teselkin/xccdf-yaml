@@ -64,6 +64,10 @@ class XmlCommon(object):
         self.append(element)
         return element
 
+    def set(self, key, *args, **kwargs):
+        method_name = 'set_{}'.format(key.replace('-', '_').lower())
+        return getattr(self, method_name)(*args, **kwargs)
+
     def set_text(self, text):
         self._text = text
         return self

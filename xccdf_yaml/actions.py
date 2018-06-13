@@ -1,4 +1,5 @@
 import os
+import operator
 import html
 import shutil
 import json
@@ -101,6 +102,28 @@ class ConvertYamlAction(object):
             .add_group(group_info.get('id'))\
             .set_title(group_info.get('title'))
 
+        for values in data.get('values', {}):
+            for value_id, value_data in sorted(values.items(),
+                                               key=operator.itemgetter(0)):
+                value_element = benchmark.new_value(value_id)
+                for key in ['type', 'operator']:
+                    if key in value_data:
+                        value_element.set_attr(key, value_data[key])
+                if 'title' in value_data:
+                    value_element.set_title(value_data['title'])
+                if 'description' in value_data:
+                    value_element.set_description(value_data['description'])
+
+                for key in ['value', 'default', 'lower-bound', 'upper-bound']:
+                    item = value_data.get(key)
+                    if isinstance(item, list):
+                        for x in item:
+                            for selector, value in x.items():
+                                value_element.set(key, value,
+                                                  selector=selector)
+                    elif item is not None:
+                        value_element.set(key, str(item))
+
         shared_files = {}
 
         oval = OvalDefinitions()
@@ -161,7 +184,6 @@ class ConvertYamlAction(object):
             with open(oval_filename, 'w') as f:
                 f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
                 f.write(oval_xml_str)
-
 
         with open(benchmark_filename, 'w') as f:
             f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
