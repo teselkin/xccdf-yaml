@@ -7,7 +7,6 @@ from xccdf_yaml.oval import OvalTest
 from xccdf_yaml.oval import OvalState
 from xccdf_yaml.oval import Criterion
 from xccdf_yaml.oval import Metadata
-from xccdf_yaml.oval import NSMAP
 from xccdf_yaml.cpe import get_affected_from_cpe
 
 class SysctlParser(GenericParser):
@@ -18,20 +17,17 @@ class SysctlParser(GenericParser):
         res = ParsedObjects()
         rule = res.new_rule(id)
 
-        did = 'oval:{}:def:1'.format(id)
-        oid = 'oval:{}:obj:1'.format(id)
-        tid = 'oval:{}:tst:1'.format(id)
-        sid = 'oval:{}:ste:1'.format(id)
-
         affected = metadata.get('affected', 'Ubuntu 1604')
 
         # Object
-        obj = OvalObject(oid, 'sysctl_object', ns=self.__ns__)
-        fpath = obj.sub_element('name').set_text(metadata['key'])
+        obj = OvalObject('oval:{}:obj:1'.format(id),
+                         'sysctl_object', ns=self.__ns__)
+        obj.sub_element('name').set_text(metadata['key'])
         res.objects.append(obj)
 
         # State
-        state = OvalState(sid, 'sysctl_state', ns=self.__ns__)
+        state = OvalState('oval:{}:ste:1'.format(id),
+                          'sysctl_state', ns=self.__ns__)
         sysctl_value = state.sub_element('value').set_text(metadata['value'])
         sysctl_value.set_attrs({
             'datatype': 'int',
@@ -40,13 +36,14 @@ class SysctlParser(GenericParser):
         res.states.append(state)
 
         # Test
-        test = OvalTest(tid, 'sysctl_test', ns=self.__ns__)
+        test = OvalTest('oval:{}:tst:1'.format(id),
+                        'sysctl_test', ns=self.__ns__)
         test.add_object(obj)
         test.add_state(state)
         res.tests.append(test)
 
         # Definition
-        definition = Definition(did)
+        definition = Definition('oval:{}:def:1'.format(id))
 
         metadata = definition.add_metadata()
         metadata.set_title(str(id))
