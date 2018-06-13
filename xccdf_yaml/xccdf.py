@@ -197,10 +197,11 @@ class XccdfCheck(XmlBase):
             self.set_attr('id', id)
         self.set_attr('system', self.namespace(system_ns))
 
-    def check_import(self, *args, **kwargs):
-        attrs = dict(zip(('attrs',), args)).get('attrs', {})
-        attrs.update(kwargs)
-        self.sub_element('check-import').set_attrs(attrs)
+    def check_import(self, import_name, import_xpath=None):
+        element = self.sub_element('check-import')\
+            .set_attr('import-name', import_name)
+        if import_xpath:
+            element.set_attr('import-xpath', import_xpath)
         return self
 
     def check_export(self, value_id, export_name):

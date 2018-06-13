@@ -140,8 +140,9 @@ class CmdExecParser(object):
             os.chmod(target_filename, x.st_mode | stat.S_IEXEC)
 
         check = rule.add_check(system_ns='sce')\
-            .check_import({'import-name': 'stdout'})\
+            .check_import(import_name='stdout')\
             .check_content_ref({'href': filename})
+
         if 'export' in metadata:
             for item in metadata['export']:
                 if isinstance(item, dict):
