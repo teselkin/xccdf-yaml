@@ -36,3 +36,7 @@ class XCCDF_YAML_App(App):
 def main():
     app = XCCDF_YAML_App()
     return app.run(sys.argv[1:])
+
+
+if __name__ == '__main__':
+    main()
