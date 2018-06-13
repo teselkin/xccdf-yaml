@@ -151,10 +151,10 @@ class ConvertYamlAction(object):
             profile.append_rule(res.rule, selected=True)
             if res.has_oval_data:
                 res.rule.add_check()\
-                    .check_content_ref({
-                        'name': res.definition.get_attr('id'),
-                        'href': oval_ref,
-                    })
+                    .check_content_ref(
+                        href=oval_ref,
+                        name=res.definition.get_attr('id'),
+                    )
                 self.extend_oval(oval, res)
 
         for shared_file, data in shared_files.items():

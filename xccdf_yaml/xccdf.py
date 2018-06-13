@@ -210,10 +210,11 @@ class XccdfCheck(XmlBase):
             .set_attr('export-name', export_name)
         return self
 
-    def check_content_ref(self, *args, **kwargs):
-        attrs = dict(zip(('attrs',), args)).get('attrs', {})
-        attrs.update(kwargs)
-        self.sub_element('check-content-ref').set_attrs(attrs)
+    def check_content_ref(self, href, name=None):
+        element = self.sub_element('check-content-ref')\
+            .set_attr('href', href)
+        if name:
+            element.set_attr('name', name)
         return self
 
 

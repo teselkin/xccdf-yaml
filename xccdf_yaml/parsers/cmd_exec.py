@@ -141,7 +141,7 @@ class CmdExecParser(object):
 
         check = rule.add_check(system_ns='sce')\
             .check_import(import_name='stdout')\
-            .check_content_ref({'href': filename})
+            .check_content_ref(href=filename)
 
         if 'export' in metadata:
             for item in metadata['export']:
