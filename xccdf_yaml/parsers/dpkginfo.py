@@ -1,19 +1,21 @@
+from xccdf_yaml.parsers.common import ParsedObjects
 from xccdf_yaml.parsers.common import GenericParser
 
 from xccdf_yaml.oval import Definition
 from xccdf_yaml.oval import OvalObject
-from xccdf_yaml.oval import OvalState
 from xccdf_yaml.oval import OvalTest
+from xccdf_yaml.oval import OvalState
+from xccdf_yaml.oval import Criterion
+from xccdf_yaml.oval import Metadata
+from xccdf_yaml.oval import NSMAP
 
 class DpkginfoParser(GenericParser):
     __id__ = 'pkg'
+    __ns__ = 'oval-def-linux'
 
     def parse(self, id, metadata):
-        res = {}
-        res['definition'] = None
-        res['tests'] = []
-        res['object'] = []
-        res['states'] = []
+        res = ParsedObjects()
+        rule = res.new_rule(id)
 
         did = 'oval:{}:def:1'.format(id)
         oid = 'oval:{}:obj:1'.format(id)
@@ -22,14 +24,14 @@ class DpkginfoParser(GenericParser):
 
         # Object
         if 'name' in metadata:
-            obj = OvalObject(oid, 'dpkginfo_object')
+            obj = OvalObject(oid, 'dpkginfo_object', ns=self.__ns__)
             pkgname = obj.sub_element('name').set_text(metadata['name'])
-            res['object'].append(obj)
+            res.objects.append(obj)
         else:
             raise Exception('name must be set')
 
         # State
-        state = OvalState(oid, 'dpkginfo_state')
+        state = OvalState(sid, 'dpkginfo_state', ns=self.__ns__)
         if 'version' in metadata:
             version = metadata['version']
             operation = metadata.get('match')
@@ -48,23 +50,25 @@ class DpkginfoParser(GenericParser):
                 'datatype': 'evr_string',
                 'operation': operation,
             })
-        res['states'].append(state)
+        res.states.append(state)
 
         # Test
-        test = OvalTest(tid, 'dpkginfo_test')
-        o = test.sub_element('object')
-        o.set_attr('object_ref', oid)
-        s = test.sub_element('state')
-        s.set_attr('state_ref', sid)
-        res['tests'].append(test)
+        test = OvalTest(tid, 'dpkginfo_test', ns=self.__ns__)
+        test.add_object(obj)
+        res.tests.append(test)
 
         # definition
         definition = Definition(did)
-        definition.add_metadata('some meta') # ???
-        criteria = definition.sub_element('criteria')
-        for t in res['tests']:
-            crirerion = criteria.sub_element('criterion')
-            criterion.set_attr('test_ref', t.get_attr('id'))
-        res['definition'] = definition
+
+        metadata = definition.add_metadata()
+        metadata.set_title(str(id))
+        metadata.set_description('Check for {}'.format(id))
+        metadata.set_affected('unix', 'Ubuntu 1604')
+
+        criteria = definition.add_criteria()
+        for test in res.tests:
+            criterion = Criterion(test.get_attr('id'))
+            criteria.add_criterion(criterion)
+        res.definition = definition
 
         return res

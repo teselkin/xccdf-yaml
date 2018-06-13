@@ -1,19 +1,21 @@
+from xccdf_yaml.parsers.common import ParsedObjects
 from xccdf_yaml.parsers.common import GenericParser
 
 from xccdf_yaml.oval import Definition
 from xccdf_yaml.oval import OvalObject
-from xccdf_yaml.oval import OvalState
 from xccdf_yaml.oval import OvalTest
+from xccdf_yaml.oval import OvalState
+from xccdf_yaml.oval import Criterion
+from xccdf_yaml.oval import Metadata
+from xccdf_yaml.oval import NSMAP
 
 class SysctlParser(GenericParser):
     __id__ = 'sysctl'
+    __ns__ = 'oval-def-unix'
 
     def parse(self, id, metadata):
-        res = {}
-        res['definition'] = None
-        res['tests'] = []
-        res['object'] = []
-        res['states'] = []
+        res = ParsedObjects()
+        rule = res.new_rule(id)
 
         did = 'oval:{}:def:1'.format(id)
         oid = 'oval:{}:obj:1'.format(id)
@@ -21,34 +23,37 @@ class SysctlParser(GenericParser):
         sid = 'oval:{}:ste:1'.format(id)
 
         # Object
-        obj = OvalObject(oid, 'sysctl_object')
+        obj = OvalObject(oid, 'sysctl_object', ns=self.__ns__)
         fpath = obj.sub_element('name').set_text(metadata['key'])
-        res['object'].append(obj)
+        res.objects.append(obj)
 
         # State
-        state = OvalState(sid, 'sysctl_state')
+        state = OvalState(sid, 'sysctl_state', ns=self.__ns__)
         sysctl_value = state.sub_element('value').set_text(metadata['value'])
         sysctl_value.set_attrs({
             'datatype': 'int',
             'operation': 'equals',
         })
-        res['states'].append(state)
+        res.states.append(state)
 
         # Test
-        test = OvalTest(tid, 'sysctl_test')
-        o = test.sub_element('object')
-        o.set_attr('object_ref', oid)
-        s = test.sub_element('state')
-        s.set_attr('state_ref', sid)
-        res['tests'].append(test)
+        test = OvalTest(tid, 'sysctl_test', ns=self.__ns__)
+        test.add_object(obj)
+        test.add_state(state)
+        res.tests.append(test)
 
         # Definition
         definition = Definition(did)
-        definition.add_metadata('some meta') # ???
-        criteria = definition.sub_element('criteria')
-        for t in res['tests']:
-            crirerion = criteria.sub_element('criterion')
-            criterion.set_attr('test_ref', t.get_attr('id'))
-        res['definition'] = definition
+
+        metadata = definition.add_metadata()
+        metadata.set_title(str(id))
+        metadata.set_description('Check for {}'.format(id))
+        metadata.set_affected('unix', 'Ubuntu 1604')
+
+        criteria = definition.add_criteria()
+        for test in res.tests:
+            criterion = Criterion(test.get_attr('id'))
+            criteria.add_criterion(criterion)
+        res.definition = definition
 
         return res

@@ -1,14 +1,19 @@
+from xccdf_yaml.parsers.common import ParsedObjects
 from xccdf_yaml.parsers.common import GenericParser
 
 from xccdf_yaml.oval import Definition
 from xccdf_yaml.oval import OvalObject
-from xccdf_yaml.oval import OvalState
 from xccdf_yaml.oval import OvalTest
+from xccdf_yaml.oval import OvalState
+from xccdf_yaml.oval import Criterion
+from xccdf_yaml.oval import Metadata
+from xccdf_yaml.oval import NSMAP
 
 from collections import OrderedDict
 
 class FileParser(GenericParser):
     __id__ = 'file'
+    __ns__ = 'oval-def-unix'
 
     @staticmethod
     def __parse_mode__(mode):
@@ -17,26 +22,24 @@ class FileParser(GenericParser):
         'gread', 'gwrite', 'gexec',
         'oread', 'owrite', 'oexec',
         ]
-        bit_values = [str(x == '1').lower()
-                      for x in '{:09b}'.format(mode)[:9]]
+        bit_string = ''.join([
+            '{0:03b}'.format(int(i)) for i in str(mode)])
+        bit_values = [str(x == '1').lower() for x in bit_string]
         return OrderedDict(zip(bit_names, bit_values))
 
     def parse(self, id, metadata):
-        res = {}
-        res['definition'] = None
-        res['tests'] = []
-        res['object'] = []
-        res['states'] = []
+        res = ParsedObjects()
+        rule = res.new_rule(id)
 
         did = 'oval:{}:def:1'.format(id)
         oid = 'oval:{}:obj:1'.format(id)
 
         # Object
         if 'filename' in metadata:
-            obj = OvalObject(oid, 'file_object')
+            obj = OvalObject(oid, 'file_object', ns=self.__ns__)
             fpath = obj.sub_element('filepath').set_text(metadata['filename'])
             fpath.set_attr('operation', 'pattern match')
-            res['object'].append(obj)
+            res.objects.append(obj)
         else:
             raise Exception('filename must be set')
 
@@ -48,61 +51,82 @@ class FileParser(GenericParser):
             modes = self.__parse_mode__(mode)
             tid = 'oval:{}_mode:tst:1'.format(id)
             sid = 'oval:{}_mode:ste:1'.format(id)
-            state = OvalState(sid, 'file_state')
+            # State
+            state = OvalState(sid, 'file_state', ns=self.__ns__)
+            state.__elements_order__ = (
+                'uread', 'uwrite', 'uexec',
+                'gread', 'gwrite', 'gexec',
+                'oread', 'owrite', 'oexec',
+            )
             for k, v in modes.items():
-                attrs = {'type': 'boolean'}
+                attrs = {'datatype': 'boolean'}
                 entity = state.sub_element(k).set_text(v)
                 entity.set_attrs(attrs)
-            t = OvalTest(tid, 'file_test')
-            # Can't use test.add_(object|state) due to incorrect id!
-            o = test.sub_element('object')
-            o.set_attr('object_ref', oid)
-            s = test.sub_element('state')
-            s.set_attr('state_ref', sid)
-            res['tests'].append(test)
-            res['states'].append(state)
+            res.states.append(state)
+            # Test
+            test = OvalTest(tid, 'file_test', ns=self.__ns__)
+            test.__elements_order__ = (
+                'object',
+                'state',
+            )
+            test.add_object(obj)
+            test.add_state(state)
+            res.tests.append(test)
         if 'uid' in metadata:
             uid = str(metadata['uid'])
             if int(uid) < 0 or not uid.isdecimal():
                 raise Exception('UID must be positive decimal')
             tid = 'oval:{}_uid:tst:1'.format(uid)
             sid = 'oval:{}_uid:ste:1'.format(uid)
-            state = OvalState(sid, 'file_state')
+            # State
+            state = OvalState(sid, 'file_state', ns=self.__ns__)
             attrs = {'datatype': 'int', 'operation': 'equals'}
             _uid = state.sub_element('user_id').set_text(uid)
             _uid.set_attrs(attrs)
-            test = OvalTest(tid, 'file_test')
-            o = test.sub_element('object')
-            o.set_attr('object_ref', oid)
-            s = test.sub_element('state')
-            s.set_attr('state_ref', sid)
-            res['states'].append(state)
-            res['tests'].append(test)
+            res.states.append(state)
+            # Test
+            test = OvalTest(tid, 'file_test', ns=self.__ns__)
+            test.__elements_order__ = (
+                'object',
+                'state',
+            )
+            test.add_object(obj)
+            test.add_state(state)
+            res.tests.append(test)
         if 'gid' in metadata:
             gid = str(metadata['gid'])
             if int(gid) < 0 or not gid.isdecimal():
                 raise Exception('GID must be positive decimal')
             tid = 'oval:{}_uid:tst:1'.format(uid)
             sid = 'oval:{}_gid:ste:1'.format(sid)
-            state = OvalState(sid, 'file_state')
+            # State
+            state = OvalState(sid, 'file_state', ns=self.__ns__)
             attrs = {'datatype': 'int', 'operation': 'equals'}
             _gid = state.sub_element('group_id').set_text(gid)
             _gid.set_attrs(attrs)
-            test = OvalTest(tid, 'file_test')
-            o = test.sub_element('object')
-            o.set_attr('object_ref', oid)
-            s = test.sub_element('state')
-            s.set_attr('state_ref', sid)
-            res['states'].append(state)
-            res['tests'].append(test)
+            res.states.append(state)
+            # Test
+            test = OvalTest(tid, 'file_test', ns=self.__ns__)
+            test.__elements_order__ = (
+                'object',
+                'state',
+            )
+            test.add_object(obj)
+            test.add_state(state)
+            res.tests.append(test)
 
         # definition
         definition = Definition(did)
-        definition.add_metadata('some meta') # ???
-        criteria = definition.sub_element('criteria')
-        for t in res['tests']:
-            crirerion = criteria.sub_element('criterion')
-            criterion.set_attr('test_ref', t.get_attr('id'))
-        res['definition'] = definition
+
+        metadata = definition.add_metadata()
+        metadata.set_title(str(id))
+        metadata.set_description('Check for {}'.format(id))
+        metadata.set_affected('unix', 'Ubuntu 1604')
+
+        criteria = definition.add_criteria()
+        for test in res.tests:
+            criterion = Criterion(test.get_attr('id'))
+            criteria.add_criterion(criterion)
+        res.definition = definition
 
         return res
