@@ -1,6 +1,7 @@
 from xccdf_yaml.parsers.common import ParsedObjects
 
 import os
+import re
 import stat
 
 
@@ -138,8 +139,18 @@ class CmdExecParser(object):
             x = os.stat(target_filename)
             os.chmod(target_filename, x.st_mode | stat.S_IEXEC)
 
-        rule.add_check(system_ns='sce')\
+        check = rule.add_check(system_ns='sce')\
             .check_import({'import-name': 'stdout'})\
             .check_content_ref({'href': filename})
+        if 'export' in metadata:
+            for item in metadata['export']:
+                if isinstance(item, dict):
+                    for value_id, export_name in item.items():
+                        check.check_export(value_id=value_id,
+                                           export_name=export_name)
+                else:
+                    export_name = re.sub(r'[^\w\d]', '_', item).upper()
+                    check.check_export(value_id=item,
+                                       export_name=export_name)
 
         return res

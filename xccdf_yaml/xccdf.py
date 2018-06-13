@@ -186,6 +186,7 @@ class BenchmarkRule(XmlBase, SetTitleMixin, SetDescriptionMixin):
 class XccdfCheck(XmlBase):
     __elements_order__ = (
         'check-import',
+        'check-export',
         'check-content',
         'check-content-ref',
     )
@@ -200,6 +201,12 @@ class XccdfCheck(XmlBase):
         attrs = dict(zip(('attrs',), args)).get('attrs', {})
         attrs.update(kwargs)
         self.sub_element('check-import').set_attrs(attrs)
+        return self
+
+    def check_export(self, value_id, export_name):
+        self.sub_element('check-export')\
+            .set_attr('value-id', value_id)\
+            .set_attr('export-name', export_name)
         return self
 
     def check_content_ref(self, *args, **kwargs):
