@@ -23,7 +23,7 @@ class SystemdParser(GenericParser):
         if 'name' not in metadata:
             raise KeyError('name of service must be set')
 
-        affected = metagata.get('affected', 'Ubuntu 1604')
+        affected = metadata.get('affected', 'Ubuntu 1604')
         name = metadata['name']
         target = metadata.get('target', 'multi-user.target')
 
