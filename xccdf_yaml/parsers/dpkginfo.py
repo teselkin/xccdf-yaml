@@ -17,8 +17,6 @@ class DpkginfoParser(GenericParser):
         res = ParsedObjects(self.xccdf)
         res.new_rule(id)
 
-        did = 'oval:{}:def:1'.format(id)
-
         affected = metadata.get('affected', 'Ubuntu 1604')
 
         packages = []
@@ -71,7 +69,7 @@ class DpkginfoParser(GenericParser):
             res.tests.append(test)
 
         # definition
-        definition = Definition(did)
+        definition = Definition('oval:{}:def:1'.format(id))
 
         metadata = definition.add_metadata()
         metadata.set_title(str(id))
