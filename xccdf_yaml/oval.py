@@ -25,6 +25,7 @@ class OvalDefinitions(XmlBase):
         'tests',
         'objects',
         'states',
+        'variables'
     )
 
     def __init__(self):
@@ -160,6 +161,22 @@ class Generator(XmlBase):
         self.sub_element('schema_version', ns='oval-common').set_text('5.11')
         self.sub_element('timestamp', ns='oval-common')\
             .set_text(datetime.datetime.now().isoformat())
+
+
+class ExternalVariable(XmlBase):
+    __element_order__ = (
+        'comment',
+        'datatype',
+        'id',
+        'version'
+    )
+    def __init__(self, id, datatype, version='1', comment=None):
+        super().__init__('external_variable')
+        comment = 'External variable' if not comment else comment
+        self.set_attr('comment', comment)
+        self.set_attr('datatype', datatype)
+        self.set_attr('id', id)
+        self.set_attr('version', version)
 
 
 class Definition(XmlBase):

@@ -6,6 +6,7 @@ from xccdf_yaml.oval import OvalObject
 from xccdf_yaml.oval import OvalTest
 from xccdf_yaml.oval import Criterion
 # from xccdf_yaml.oval import Metadata
+from xccdf_yaml.oval import ExternalVariable
 from xccdf_yaml.cpe import get_affected_from_cpe
 
 import os
@@ -26,8 +27,10 @@ class TextfilecontentParser(GenericParser):
 
         if not 'filename' in metadata:
             raise KeyError('filename must be set')
+
         if 'pattern' not in metadata:
-            raise KeyError('pattern must be set')
+            if 'variable' not in metadata:
+                raise KeyError('pattern or variable must be set')
 
         filenames = []
         if isinstance(metadata['filename'], str):
@@ -37,7 +40,10 @@ class TextfilecontentParser(GenericParser):
         else:
             raise ValueError('Unsupported filename format')
 
-        pattern = metadata['pattern']
+        pattern = metadata.get('pattern')
+        variable = metadata.get('variable')
+        oval_var_id = 'oval:{}:var:1'.format(variable)
+
         affected = metadata.get('affected', 'Ubuntu 1604')
 
         for idx, f in enumerate(filenames):
@@ -67,9 +73,14 @@ class TextfilecontentParser(GenericParser):
                 .set_text(filename)\
                 .set_attr('operation', 'pattern match')
 
-            obj.sub_element('pattern')\
-                .set_text(pattern)\
-                .set_attr('operation', 'pattern match')
+            if pattern:
+                obj.sub_element('pattern')\
+                    .set_text(pattern)\
+                    .set_attr('operation', 'pattern match')
+            else:
+                obj.sub_element('pattern')\
+                    .set_attr('var_ref', oval_var_id)\
+                    .set_attr('operation', 'pattern match')
 
             obj.sub_element('instance')\
                 .set_text('1')\
@@ -89,6 +100,11 @@ class TextfilecontentParser(GenericParser):
             test.set_attr('check_existence', exists)
             test.add_object(obj)
             res.tests.append(test)
+
+        # variable
+        if variable:
+            var_type = metadata['external-variables'][variable]
+            res.variable = ExternalVariable(oval_var_id, var_type)
 
         # definition
         definition = Definition('oval:{}:def:1'.format(id))

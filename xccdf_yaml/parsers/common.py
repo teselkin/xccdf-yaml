@@ -28,6 +28,7 @@ class ParsedObjects(object):
         self.tests = []
         self._shared_files = {}
         self._entrypoints = set()
+        self.variable = None
 
     def new_rule(self, id):
         # self.rule = XccdfRule(id)
@@ -58,3 +59,7 @@ class ParsedObjects(object):
     @property
     def has_oval_data(self):
         return any([self.definition, self.states, self.states, self.tests])
+
+    @property
+    def has_variable(self):
+        return True if self.variable else False

@@ -60,12 +60,14 @@ class ConvertYamlAction(object):
         oval.extend_tests(result.tests)
         oval.extend_objects(result.objects)
         oval.extend_states(result.states)
+        oval.append_variable(result.variable)
 
     def take_action(self, parsed_args):
         data = yaml.load(open(parsed_args.filename), YamlLoader)
         data = data.get('benchmark')
         if data is None:
             raise Exception('No benchmark section found')
+        variables_types = {}
 
         benchmark_id = data.get('id') or parsed_args.filename
 
@@ -108,6 +110,8 @@ class ConvertYamlAction(object):
         for values in data.get('values', {}):
             for value_id, value_data in sorted(values.items(),
                                                key=operator.itemgetter(0)):
+                variables_types[value_id] = value_data['type']
+
                 value_element = benchmark.new_value(value_id)
                 for key in ['type', 'operator']:
                     if key in value_data:
@@ -149,6 +153,8 @@ class ConvertYamlAction(object):
                                           output_dir=output_dir)
             if platform and not metadata.get('affected', False):
                 metadata['affected'] = platform
+            if 'variable' in metadata:
+                metadata['external-variables'] = variables_types
             res = parser.parse(id, metadata)
             for shared_file, data in res.shared_files:
                 shared_files.setdefault(shared_file, {})
@@ -156,11 +162,17 @@ class ConvertYamlAction(object):
             group.append_rule(res.rule)
             profile.append_rule(res.rule, selected=True)
             if res.has_oval_data:
-                res.rule.add_check()\
-                    .check_content_ref(
-                        href=oval_ref,
-                        name=res.definition.get_attr('id'),
+                check = res.rule.add_check()
+                if res.has_variable:
+                    check.check_export(
+                        # FIXME: Fix value id for variable
+                        value_id=metadata['variable'],
+                        export_name=res.variable.get_attr('id'),
                     )
+                check.check_content_ref(
+                    href=oval_ref,
+                    name=res.definition.get_attr('id'),
+                )
                 self.extend_oval(oval, res)
             for entrypoint in res.entrypoints:
                 entrypoints.add(entrypoint)
