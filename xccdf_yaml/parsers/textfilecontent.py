@@ -4,6 +4,7 @@ from xccdf_yaml.parsers.common import GenericParser
 from xccdf_yaml.oval import Definition
 from xccdf_yaml.oval import OvalObject
 from xccdf_yaml.oval import OvalTest
+from xccdf_yaml.oval import OvalState
 from xccdf_yaml.oval import Criterion
 # from xccdf_yaml.oval import Metadata
 from xccdf_yaml.oval import ExternalVariable
@@ -28,9 +29,8 @@ class TextfilecontentParser(GenericParser):
         if not 'filename' in metadata:
             raise KeyError('filename must be set')
 
-        if 'pattern' not in metadata:
-            if 'variable' not in metadata:
-                raise KeyError('pattern or variable must be set')
+        if 'pattern' not in metadata and 'variable' not in metadata:
+            raise KeyError('pattern or variable must be set')
 
         filenames = []
         if isinstance(metadata['filename'], str):
@@ -42,11 +42,14 @@ class TextfilecontentParser(GenericParser):
 
         pattern = metadata.get('pattern')
         variable = metadata.get('variable')
+        subexpression = metadata.get('subexpression')
+
         oval_var_id = 'oval:{}:var:1'.format(variable)
 
         affected = metadata.get('affected', 'Ubuntu 1604')
 
         for idx, f in enumerate(filenames):
+            state = None
             # Object
             path, filename = os.path.split(f)
 
@@ -78,15 +81,26 @@ class TextfilecontentParser(GenericParser):
                     .set_text(pattern)\
                     .set_attr('operation', 'pattern match')
             else:
-                obj.sub_element('pattern')\
-                    .set_attr('var_ref', oval_var_id)\
-                    .set_attr('operation', 'pattern match')
+                if not subexpression:
+                    obj.sub_element('pattern')\
+                        .set_attr('var_ref', oval_var_id)\
+                        .set_attr('operation', 'pattern match')
 
             obj.sub_element('instance')\
                 .set_text('1')\
                 .set_attr('datatype', 'int')
 
             res.objects.append(obj)
+
+            # State
+            if subexpression and pattern:
+                state = OvalState('oval:{}_{}:ste:1'.format(id, idx),
+                                  'textfilecontent54_state', ns=self.__ns__)
+                if variable:
+                    state.sub_element('subexpression')\
+                        .set_attr('var_check', 'all')\
+                        .set_attr('var_ref', oval_var_id)
+                res.states.append(state)
 
             # Test
             test = OvalTest('oval:{}_{}:tst:1'.format(id, idx),
@@ -99,6 +113,8 @@ class TextfilecontentParser(GenericParser):
 
             test.set_attr('check_existence', exists)
             test.add_object(obj)
+            if state:
+                test.add_state(state)
             res.tests.append(test)
 
         # variable
