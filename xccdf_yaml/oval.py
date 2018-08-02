@@ -1,5 +1,6 @@
 import datetime
 
+from collections import OrderedDict
 from xccdf_yaml.xml import XmlCommon
 
 NSMAP = {
@@ -31,10 +32,11 @@ class OvalDefinitions(XmlBase):
         generator = Generator()
         self.append(generator)
 
-        self._definitions = []
-        self._tests = []
-        self._objects = []
-        self._states = []
+        self._definitions = OrderedDict()
+        self._tests = OrderedDict()
+        self._objects = OrderedDict()
+        self._states = OrderedDict()
+        self._variables = OrderedDict()
 
     def is_empty(self):
         return not any([self._definitions, self._tests,
@@ -61,61 +63,85 @@ class OvalDefinitions(XmlBase):
         return instance
 
     def append_definition(self, item):
-        self._definitions.append(item)
+        if item:
+            self._definitions.setdefault(item.get_attr('id'), item)
         return self
 
     def append_test(self, item):
-        self._tests.append(item)
+        if item:
+            self._tests.setdefault(item.get_attr('id'), item)
         return self
 
     def append_object(self, item):
-        self._objects.append(item)
+        if item:
+            self._objects.setdefault(item.get_attr('id'), item)
         return self
 
     def append_state(self, item):
-        self._states.append(item)
+        if item:
+            self._states.setdefault(item.get_attr('id'), item)
+        return self
+
+    def append_variable(self, item):
+        if item:
+            self._variables.setdefault(item.get_attr('id'), item)
         return self
 
     def extend_definitions(self, items):
-        self._definitions.extend(items)
+        for item in items:
+            self.append_definition(item)
         return self
 
     def extend_tests(self, items):
-        self._tests.extend(items)
+        for item in items:
+            self.append_test(item)
         return self
 
     def extend_objects(self, items):
-        self._objects.extend(items)
+        for item in items:
+            self.append_object(item)
         return self
 
     def extend_states(self, items):
-        self._states.extend(items)
+        for item in items:
+            self.append_state(item)
+        return self
+
+    def extend_variables(self, items):
+        for item in items:
+            self.append_variable(item)
         return self
 
     def update_elements(self):
         self.remove_elements(name='definitions')
         if len(self._definitions) > 0:
             definitions = self.sub_element('definitions')
-            for x in self._definitions:
+            for x in self._definitions.values():
                 definitions.append(x)
 
         self.remove_elements(name='tests')
         if len(self._tests) > 0:
             tests = self.sub_element('tests')
-            for x in self._tests:
+            for x in self._tests.values():
                 tests.append(x)
 
         self.remove_elements(name='objects')
         if len(self._objects) > 0:
             objects  = self.sub_element('objects')
-            for x in self._objects:
+            for x in self._objects.values():
                 objects.append(x)
 
         self.remove_elements(name='states')
         if len(self._states) > 0:
             states = self.sub_element('states')
-            for x in self._states:
+            for x in self._states.values():
                 states.append(x)
+
+        self.remove_elements(name='variables')
+        if len(self._variables) > 0:
+            variables = self.sub_element('variables')
+            for x in self._variables.values():
+                variables.append(x)
 
 
 class Generator(XmlBase):
