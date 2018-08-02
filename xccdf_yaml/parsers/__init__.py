@@ -6,6 +6,7 @@ from xccdf_yaml.parsers.sysctl import SysctlParser
 from xccdf_yaml.parsers.textfilecontent import TextfilecontentParser
 from xccdf_yaml.parsers.systemd import SystemdParser
 from xccdf_yaml.parsers.sce import ScriptCheckEngineParser
+from xccdf_yaml.parsers.inetlisteningservers import InetlisteningserversParser
 
 
 PARSERS = {
@@ -17,4 +18,5 @@ PARSERS = {
     'sysctl': SysctlParser,
     'systemd': SystemdParser,
     'sce': ScriptCheckEngineParser,
+    'listen': InetlisteningserversParser,
 }
