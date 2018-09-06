@@ -113,5 +113,6 @@ benchmark:
         raw: |
           def main():
               print("Hello World")
+  - !include-dir 'checks'
   - !include test-bin-false.yaml
   - !include test-rule-list.yaml

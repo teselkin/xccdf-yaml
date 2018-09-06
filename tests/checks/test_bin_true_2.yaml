@@ -1,0 +1,6 @@
+test_bin_true_2:
+  type: cmd_exec
+  title: "Test /bin/true #2"
+  description: This is a test script
+  cmd: |
+    /bin/true

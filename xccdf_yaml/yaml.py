@@ -64,5 +64,21 @@ class YamlLoader(yaml.Loader):
         with open(filename, 'r') as f:
             return yaml.load(f, YamlLoader)
 
+    def include_dir(self, node):
+        path = os.path.join(self._root, self.construct_scalar(node))
+        data = []
+        for name in os.listdir(path):
+            filename = os.path.join(path, name)
+            if os.path.isfile(filename):
+                if name.endswith('.yaml') or name.endswith('.yml'):
+                    with open(filename, 'r') as f:
+                        content = yaml.load(f, YamlLoader)
+                        if isinstance(content, list):
+                            data.extend(content)
+                        else:
+                            data.append(content)
+        return data
+
 
 YamlLoader.add_constructor('!include', YamlLoader.include)
+YamlLoader.add_constructor('!include-dir', YamlLoader.include_dir)
