@@ -1,0 +1,7 @@
+test_sce_parser:
+  type: sce
+  title: "Test SCE parser"
+  description: This is a test SCE script
+  check:
+    codeblock: |
+      exit 101
