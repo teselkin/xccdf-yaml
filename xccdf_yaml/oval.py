@@ -44,24 +44,16 @@ class OvalDefinitions(XmlBase):
                         self._objects, self._states])
 
     def add_definition(self, id):
-        definition = Definition(id)
-        self._definitions.append(definition)
-        return definition
+        return self._definitions.setdefault(id, Definition(id))
 
     def add_test(self, name, ns=None):
-        instance = OvalTest(name, ns)
-        self._tests.append(instance)
-        return instance
+        return self._tests.setdefault(name, OvalTest(name, ns))
 
     def add_object(self, id, name, ns=None):
-        instance = OvalObject(id, name, ns)
-        self._objects.append(instance)
-        return instance
+        return self._objects.setdefault(id, OvalObject(id, name, ns))
 
     def add_state(self, id, name, ns=None):
-        instance = OvalState(id, name, ns)
-        self._states.append(instance)
-        return instance
+        return self._states.setdefault(id, OvalState(id, name, ns))
 
     def append_definition(self, item):
         if item:
