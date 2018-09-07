@@ -5,7 +5,7 @@ from xccdf_yaml.oval import Definition
 from xccdf_yaml.oval import OvalObject
 from xccdf_yaml.oval import OvalTest
 from xccdf_yaml.oval import Criterion
-from xccdf_yaml.oval import Metadata
+# from xccdf_yaml.oval import Metadata
 from xccdf_yaml.cpe import get_affected_from_cpe
 
 import os
@@ -15,7 +15,7 @@ class TextfilecontentParser(GenericParser):
     __ns__ = 'oval-def-indep'
 
     def parse(self, id, metadata):
-        res = ParsedObjects()
+        res = ParsedObjects(self.xccdf)
         rule = res.new_rule(id)
 
         if 'title' in metadata:

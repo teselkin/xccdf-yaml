@@ -8,7 +8,7 @@ import yaml
 import lxml.etree as etree
 
 from xccdf_yaml.yaml import YamlLoader
-from xccdf_yaml.xccdf import XccdfBenchmark
+from xccdf_yaml.xccdf import XccdfGenerator
 from xccdf_yaml.oval import OvalDefinitions
 
 from xccdf_yaml.parsers import PARSERS
@@ -72,7 +72,9 @@ class ConvertYamlAction(object):
         output_dir = os.path.join(parsed_args.output_dir, benchmark_id)
         os.makedirs(output_dir, exist_ok=True)
 
-        benchmark = XccdfBenchmark(benchmark_id)\
+        generator = XccdfGenerator('mirantis.com')
+
+        benchmark = generator.benchmark(benchmark_id)\
             .set_title(data.get('title'))\
             .set_description(data.get('description'))
 
@@ -142,9 +144,9 @@ class ConvertYamlAction(object):
         for item in unlist(data.get('rules', [])):
             id, metadata = next(iter(item.items()))
             parser_type = metadata.get('type', 'cmd_exec')
-            parser = PARSERS[parser_type](parsed_args=parsed_args,
-                                          output_dir=output_dir,
-                                          benchmark=benchmark)
+            parser = PARSERS[parser_type](benchmark,
+                                          parsed_args=parsed_args,
+                                          output_dir=output_dir)
             if platform and not metadata.get('affected', False):
                 metadata['affected'] = platform
             res = parser.parse(id, metadata)

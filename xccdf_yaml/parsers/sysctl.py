@@ -6,7 +6,7 @@ from xccdf_yaml.oval import OvalObject
 from xccdf_yaml.oval import OvalTest
 from xccdf_yaml.oval import OvalState
 from xccdf_yaml.oval import Criterion
-from xccdf_yaml.oval import Metadata
+# from xccdf_yaml.oval import Metadata
 from xccdf_yaml.cpe import get_affected_from_cpe
 
 class SysctlParser(GenericParser):
@@ -14,8 +14,8 @@ class SysctlParser(GenericParser):
     __ns__ = 'oval-def-unix'
 
     def parse(self, id, metadata):
-        res = ParsedObjects()
-        rule = res.new_rule(id)
+        res = ParsedObjects(self.xccdf)
+        res.new_rule(id)
 
         affected = metadata.get('affected', 'Ubuntu 1604')
 

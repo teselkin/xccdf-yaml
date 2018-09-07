@@ -37,8 +37,8 @@ trap_error(){
   fi
 }
 trap 'trap_error $?' ERR
-set -o xtrace
 if [[ -f "${XCCDF_VALUE_FILENAME}" ]]; then
+  set -o xtrace
   source "${XCCDF_VALUE_FILENAME}"
 fi
 exit_with PASS
@@ -70,7 +70,7 @@ except:
 
 class ScriptCheckEngineParser(GenericParser):
     def parse(self, id, metadata):
-        res = ParsedObjects()
+        res = ParsedObjects(self.xccdf)
 
         rule = res.new_rule(id)
 
@@ -114,14 +114,12 @@ class ScriptCheckEngineParser(GenericParser):
         check = rule.add_check(system_ns='sce')\
             .check_import(import_name='stdout')\
             .check_import(import_name='stderr')\
-            .check_export('xccdf-type-string', 'FILENAME')\
-            .check_export('xccdf-target', 'FILENAME')\
             .check_content_ref(href=entrypoint)
 
-        self.benchmark.new_value('xccdf-type-string')\
-            .set_value('STRING')
-        self.benchmark.new_value('xccdf-target')\
+        value = self.benchmark.new_value(
+            '{}-filename'.format(rule.get_attr('id')))\
             .set_value('{}.sh'.format(id))
+        check.check_export(value.get_attr('id'), 'FILENAME')
 
         if 'export' in metadata:
             for item in metadata['export']:

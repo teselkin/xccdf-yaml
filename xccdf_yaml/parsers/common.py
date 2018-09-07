@@ -1,13 +1,13 @@
-import os
-
-from xccdf_yaml.xccdf import XccdfRule
-
 
 class GenericParser(object):
-    def __init__(self, parsed_args=None, output_dir=None, benchmark=None):
+    def __init__(self, benchmark, parsed_args=None, output_dir=None):
         self.benchmark = benchmark
         self.parsed_args = parsed_args
         self.output_dir = output_dir or parsed_args.output_dir
+
+    @property
+    def xccdf(self):
+        return self.benchmark.xccdf
 
     @classmethod
     def name(cls):
@@ -19,7 +19,8 @@ class GenericParser(object):
 
 
 class ParsedObjects(object):
-    def __init__(self):
+    def __init__(self, xccdf):
+        self.xccdf = xccdf
         self.definition = None
         self.rule = None
         self.objects = []
@@ -29,7 +30,8 @@ class ParsedObjects(object):
         self._entrypoints = set()
 
     def new_rule(self, id):
-        self.rule = XccdfRule(id)
+        # self.rule = XccdfRule(id)
+        self.rule = self.xccdf.rule(id)
         return self.rule
 
     def add_shared_file(self, filename, content):

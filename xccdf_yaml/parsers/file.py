@@ -6,7 +6,7 @@ from xccdf_yaml.oval import OvalObject
 from xccdf_yaml.oval import OvalTest
 from xccdf_yaml.oval import OvalState
 from xccdf_yaml.oval import Criterion
-from xccdf_yaml.oval import Metadata
+# from xccdf_yaml.oval import Metadata
 from xccdf_yaml.cpe import get_affected_from_cpe
 
 class FileParser(GenericParser):
@@ -28,8 +28,8 @@ class FileParser(GenericParser):
         return dict(zip(bit_names, bit_values))
 
     def parse(self, id, metadata):
-        res = ParsedObjects()
-        rule = res.new_rule(id)
+        res = ParsedObjects(self.xccdf)
+        res.new_rule(id)
 
         if 'filename' not in metadata:
             raise KeyError('filename must be set')

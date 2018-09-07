@@ -17,8 +17,8 @@ class SystemdParser(GenericParser):
     __ns__ = 'oval-def-linux'
 
     def parse(self, id, metadata):
-        res = ParsedObjects()
-        rule = res.new_rule(id)
+        res = ParsedObjects(self.xccdf)
+        res.new_rule(id)
 
         if 'name' not in metadata:
             raise KeyError('name of service must be set')

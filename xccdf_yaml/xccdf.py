@@ -1,5 +1,6 @@
 import lxml.etree as etree
 import markdown
+import re
 
 from collections import OrderedDict
 from xccdf_yaml.xml import XmlCommon
@@ -7,7 +8,7 @@ from xccdf_yaml.xml import set_default_ns
 
 
 NSMAP = {
-    None: "http://checklists.nist.gov/xccdf/1.1",
+    None: "http://checklists.nist.gov/xccdf/1.2",
     'oval-def': "http://oval.mitre.org/XMLSchema/oval-definitions-5",
     'sce': "http://open-scap.org/page/SCE",
     'sceres': "http://open-scap.org/page/SCE_result_file",
@@ -40,6 +41,38 @@ class SetDescriptionMixin(object):
         return self
 
 
+class XccdfGenerator(object):
+    def __init__(self, vendor):
+        self.vendor = vendor
+        namespace = re.sub(r'\.+', '.',
+                           re.sub(r'[^\d\w\-\.]', '', vendor.lower()))
+        self.namespace = '.'.join(reversed(namespace.split('.')))
+
+    def id(self, element, name):
+        if element.lower() not in ['benchmark', 'profile', 'group', 'rule',
+                                   'value', 'testresult', 'tailoring']:
+            raise Exception("Bad XCCDF element {}".format(element))
+        return "xccdf_{}_{}_{}".format(self.namespace, element.lower(), name)
+
+    def benchmark(self, *args, **kwargs):
+        return XccdfBenchmark(self, *args, **kwargs)
+
+    def profile(self, *args, **kwargs):
+        return XccdfProfile(self, *args, **kwargs)
+
+    def group(self, *args, **kwargs):
+        return XccdfGroup(self, *args, **kwargs)
+
+    def rule(self, *args, **kwargs):
+        return XccdfRule(self, *args, **kwargs)
+
+    def value(self, *args, **kwargs):
+        return XccdfValue(self, *args, **kwargs)
+
+    def check(self, *args, **kwargs):
+        return XccdfCheck(self, *args, **kwargs)
+
+
 class XccdfBenchmark(XmlBase, SetTitleMixin, SetDescriptionMixin):
     __elements_order__ = (
         'status',
@@ -54,12 +87,14 @@ class XccdfBenchmark(XmlBase, SetTitleMixin, SetDescriptionMixin):
         'Rule',
     )
 
-    def __init__(self, id, version='0.1', status='draft', status_date=None):
+    def __init__(self, xccdf, id, version='0.1', status='draft',
+                 status_date=None):
         super().__init__('Benchmark')
+        self.xccdf = xccdf
         self._profiles = OrderedDict()
         self._groups = OrderedDict()
         self._values = OrderedDict()
-        self.set_attr('id', id)
+        self.set_attr('id', self.xccdf.id('benchmark', id))
         self.set_status(status, status_date)
         self.set_version(version)
 
@@ -77,13 +112,13 @@ class XccdfBenchmark(XmlBase, SetTitleMixin, SetDescriptionMixin):
         return self
 
     def add_profile(self, id):
-        return self._profiles.setdefault(id, XccdfProfile(id))
+        return self._profiles.setdefault(id, self.xccdf.profile(id))
 
     def add_group(self, id):
-        return self._groups.setdefault(id, XccdfGroup(id))
+        return self._groups.setdefault(id, self.xccdf.group(id))
 
     def new_value(self, id):
-        return self._values.setdefault(id, XccdfValue(id))
+        return self._values.setdefault(id, self.xccdf.value(id))
 
     def update_elements(self):
         self.remove_elements(name='Profile')
@@ -106,9 +141,10 @@ class XccdfProfile(XmlBase, SetTitleMixin, SetDescriptionMixin):
         'select',
     )
 
-    def __init__(self, id):
+    def __init__(self, xccdf, id):
         super().__init__('Profile')
-        self.set_attr('id', id)
+        self.xccdf = xccdf
+        self.set_attr('id', self.xccdf.id('profile', id))
         self._rules = []
 
     def append_rule(self, rule, selected=False):
@@ -130,9 +166,10 @@ class XccdfGroup(XmlBase, SetTitleMixin, SetDescriptionMixin):
         'description',
     )
 
-    def __init__(self, id):
+    def __init__(self, xccdf, id):
         super().__init__('Group')
-        self.set_attr('id', id)
+        self.xccdf = xccdf
+        self.set_attr('id', self.xccdf.id('group', id))
         self._rules = []
 
     def append_rule(self, rule):
@@ -140,7 +177,7 @@ class XccdfGroup(XmlBase, SetTitleMixin, SetDescriptionMixin):
         return rule
 
     def add_rule(self, id):
-        rule = XccdfRule(id)
+        rule = self.xccdf.rule(id)
         self._rules.append(rule)
         return rule
 
@@ -159,15 +196,16 @@ class XccdfRule(XmlBase, SetTitleMixin, SetDescriptionMixin):
         'check',
     )
 
-    def __init__(self, id, selected=False, severity='medium'):
+    def __init__(self, xccdf, id, selected=False, severity='medium'):
         super().__init__('Rule')
-        self.set_attr('id', id)
+        self.xccdf = xccdf
+        self.set_attr('id', self.xccdf.id('rule', id))
         self.set_attr('selected', {True: '1', False: '0'}.get(selected, '0'))
         self.set_attr('severity', severity)
         self._checks = []
 
     def add_check(self, **kwargs):
-        check = XccdfCheck(**kwargs)
+        check = self.xccdf.check(**kwargs)
         self._checks.append(check)
         return check
 
@@ -185,8 +223,9 @@ class XccdfCheck(XmlBase):
         'check-content-ref',
     )
 
-    def __init__(self, id=None, system_ns='oval-def'):
+    def __init__(self, xccdf, id=None, system_ns='oval-def'):
         super().__init__('check')
+        self.xccdf = xccdf
         if id:
             self.set_attr('id', id)
         self.set_attr('system', self.namespace(system_ns))
@@ -223,9 +262,10 @@ class XccdfValue(XmlBase, SetTitleMixin, SetDescriptionMixin):
         'upper-bound',
     )
 
-    def __init__(self, id, value_type=None, operator=None):
+    def __init__(self, xccdf, id, value_type=None, operator=None):
         super().__init__('Value')
-        self.set_attr('id', id)
+        self.xccdf = xccdf
+        self.set_attr('id', self.xccdf.id('value', id))
         if value_type:
             self.set_attr('type', value_type)
         if operator:
@@ -244,6 +284,7 @@ class XccdfValue(XmlBase, SetTitleMixin, SetDescriptionMixin):
         if selector is not None:
             element.set_attr('selector', selector)
         self._value[selector] = element
+        return self
 
     def set_default(self, value, selector=None):
         if selector in self._default_value:

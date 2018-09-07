@@ -78,7 +78,7 @@ except:
 
 class CmdExecParser(GenericParser):
     def parse(self, id, metadata):
-        res = ParsedObjects()
+        res = ParsedObjects(self.xccdf)
 
         rule = res.new_rule(id)
 
