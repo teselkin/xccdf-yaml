@@ -4,7 +4,7 @@ from cliff.command import Command
 from cliff.lister import Lister
 from xccdf_yaml.parsers import PARSERS
 
-from xccdf_yaml.xccdf import Benchmark
+from xccdf_yaml.xccdf import XccdfBenchmark
 
 from xccdf_yaml.oval import OvalDefinitions
 
@@ -73,7 +73,7 @@ class CliTestXccdf(Command):
         return parser
 
     def take_action(self, parsed_args):
-        benchmark = Benchmark('test_benchmark')\
+        benchmark = XccdfBenchmark('test_benchmark')\
             .set_title('Title')\
             .set_description('<b>Description</b>')
         benchmark.add_platform('cpe:/o:canonical:ubuntu_linux:16.04')

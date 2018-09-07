@@ -1,6 +1,6 @@
 import os
 
-from xccdf_yaml.xccdf import BenchmarkRule
+from xccdf_yaml.xccdf import XccdfRule
 
 
 class GenericParser(object):
@@ -29,7 +29,7 @@ class ParsedObjects(object):
         self._entrypoints = set()
 
     def new_rule(self, id):
-        self.rule = BenchmarkRule(id)
+        self.rule = XccdfRule(id)
         return self.rule
 
     def add_shared_file(self, filename, content):

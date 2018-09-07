@@ -40,7 +40,7 @@ class SetDescriptionMixin(object):
         return self
 
 
-class Benchmark(XmlBase, SetTitleMixin, SetDescriptionMixin):
+class XccdfBenchmark(XmlBase, SetTitleMixin, SetDescriptionMixin):
     __elements_order__ = (
         'status',
         'title',
@@ -77,10 +77,10 @@ class Benchmark(XmlBase, SetTitleMixin, SetDescriptionMixin):
         return self
 
     def add_profile(self, id):
-        return self._profiles.setdefault(id, BenchmarkProfile(id))
+        return self._profiles.setdefault(id, XccdfProfile(id))
 
     def add_group(self, id):
-        return self._groups.setdefault(id, BenchmarkGroup(id))
+        return self._groups.setdefault(id, XccdfGroup(id))
 
     def new_value(self, id):
         return self._values.setdefault(id, XccdfValue(id))
@@ -99,7 +99,7 @@ class Benchmark(XmlBase, SetTitleMixin, SetDescriptionMixin):
             self.append(x)
 
 
-class BenchmarkProfile(XmlBase, SetTitleMixin, SetDescriptionMixin):
+class XccdfProfile(XmlBase, SetTitleMixin, SetDescriptionMixin):
     __elements_order__ = (
         'title',
         'description',
@@ -124,7 +124,7 @@ class BenchmarkProfile(XmlBase, SetTitleMixin, SetDescriptionMixin):
                           {True: '1', False: '0'}.get(selected, '0'))
 
 
-class BenchmarkGroup(XmlBase, SetTitleMixin, SetDescriptionMixin):
+class XccdfGroup(XmlBase, SetTitleMixin, SetDescriptionMixin):
     __elements_order__ = (
         'title',
         'description',
@@ -140,7 +140,7 @@ class BenchmarkGroup(XmlBase, SetTitleMixin, SetDescriptionMixin):
         return rule
 
     def add_rule(self, id):
-        rule = BenchmarkRule(id)
+        rule = XccdfRule(id)
         self._rules.append(rule)
         return rule
 
@@ -150,7 +150,7 @@ class BenchmarkGroup(XmlBase, SetTitleMixin, SetDescriptionMixin):
             self.append(x)
 
 
-class BenchmarkRule(XmlBase, SetTitleMixin, SetDescriptionMixin):
+class XccdfRule(XmlBase, SetTitleMixin, SetDescriptionMixin):
     __elements_order__ = (
         'title',
         'description',

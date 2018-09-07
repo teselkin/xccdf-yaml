@@ -8,7 +8,7 @@ import yaml
 import lxml.etree as etree
 
 from xccdf_yaml.yaml import YamlLoader
-from xccdf_yaml.xccdf import Benchmark
+from xccdf_yaml.xccdf import XccdfBenchmark
 from xccdf_yaml.oval import OvalDefinitions
 
 from xccdf_yaml.parsers import PARSERS
@@ -72,7 +72,7 @@ class ConvertYamlAction(object):
         output_dir = os.path.join(parsed_args.output_dir, benchmark_id)
         os.makedirs(output_dir, exist_ok=True)
 
-        benchmark = Benchmark(benchmark_id)\
+        benchmark = XccdfBenchmark(benchmark_id)\
             .set_title(data.get('title'))\
             .set_description(data.get('description'))
 
