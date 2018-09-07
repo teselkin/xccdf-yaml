@@ -1,9 +1,7 @@
 from xccdf_yaml.parsers.common import GenericParser
 from xccdf_yaml.parsers.common import ParsedObjects
 
-import os
 import re
-import stat
 
 
 SHELL_WRAPPER_HEAD = """#!/bin/bash
@@ -102,42 +100,40 @@ class CmdExecParser(GenericParser):
                 .set_text(metadata['rationale'].rstrip())
 
         if 'cmd' in metadata:
-            res.add_shared_file('wrapper-head.sh', SHELL_WRAPPER_HEAD)
-            res.add_shared_file('wrapper-tail.sh', SHELL_WRAPPER_TAIL)
+            res.add_shared_file('wrapper-head.sh', content=SHELL_WRAPPER_HEAD)\
+                .set_executable()
+            res.add_shared_file('wrapper-tail.sh', content=SHELL_WRAPPER_TAIL)\
+                .set_executable()
             filename = '{}.sh'.format(id)
-            target_filename = os.path.join(self.output_dir, filename)
-            with open(target_filename, 'w') as f:
-                f.write('#!/bin/bash')
-                f.write('\nsource wrapper-head.sh\n')
-                f.write(metadata['cmd'])
-                f.write('\nsource wrapper-tail.sh\n')
+            content = []
+            content.append('#!/bin/bash')
+            content.append('source wrapper-head.sh')
+            content.append(metadata['cmd'])
+            content.append('source wrapper-tail.sh')
         elif 'python' in metadata:
             filename = '{}.py'.format(id)
-            target_filename = os.path.join(self.output_dir, filename)
-            with open(target_filename, 'w') as f:
-                f.write(PYTHON_WRAPPER_HEAD1)
-                for line in metadata['python'].get('imports', []):
-                    f.write('{}\n'.format(line))
-                f.write(PYTHON_WRAPPER_HEAD2)
-                if 'raw' in metadata['python']:
-                    f.write('{}\n'.format(metadata['python']['raw']))
-                if 'main' in metadata['python']:
-                    f.write('def main():\n')
-                    for line in metadata['python']['main'].split('\n'):
-                        if line.rstrip():
-                            f.write('    {}\n'.format(line))
-                        else:
-                            f.write('\n')
-                f.write(PYTHON_WRAPPER_TAIL)
+            content = []
+            content.append(PYTHON_WRAPPER_HEAD1)
+            content.extend(metadata['python'].get('imports', []))
+            content.append(PYTHON_WRAPPER_HEAD2)
+            content.append(metadata['python'].get('raw', '# No raw section'))
+            if 'main' in metadata['python']:
+                content.append('def main():')
+                for line in metadata['python']['main'].split('\n'):
+                    if line.rstrip():
+                        content.append('    {}'.format(line))
+                    else:
+                        content.append('')
+            content.append(PYTHON_WRAPPER_TAIL)
         else:
             raise Exception('No script or cmdline found')
 
-        if os.path.exists(target_filename):
-            x = os.stat(target_filename)
-            os.chmod(target_filename, x.st_mode | stat.S_IEXEC)
+        res.add_shared_file(filename,
+                            content='\n'.join(content)).set_executable()
 
         check = rule.add_check(system_ns='sce')\
             .check_import(import_name='stdout')\
+            .check_import(import_name='stderr')\
             .check_content_ref(href=filename)
 
         if 'export' in metadata:

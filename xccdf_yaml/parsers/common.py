@@ -1,3 +1,7 @@
+import os
+import shutil
+import stat
+
 
 class GenericParser(object):
     def __init__(self, benchmark, parsed_args=None, output_dir=None):
@@ -18,6 +22,36 @@ class GenericParser(object):
         return ''
 
 
+class SharedFile(object):
+    def __init__(self, filename):
+        self.filename = filename
+        self.source = None
+        self.content = None
+        self._executable = False
+
+    def __eq__(self, other):
+        return self.source == other.source and self.content == other.content
+
+    def set_executable(self, executable=True):
+        self._executable = executable == True
+
+    def export(self, source_dir, output_dir):
+        target = os.path.join(output_dir, os.path.basename(self.filename))
+        os.makedirs(os.path.dirname(target), exist_ok=True)
+        if self.content:
+            with open(target, 'w') as f:
+                f.write(self.content)
+        else:
+            source = os.path.join(source_dir, self.filename)
+            if os.path.exists(source):
+                shutil.copyfile(source, target)
+
+        if os.path.exists(target):
+            if self._executable:
+                x = os.stat(target)
+                os.chmod(target, x.st_mode | stat.S_IEXEC)
+
+
 class ParsedObjects(object):
     def __init__(self, xccdf):
         self.xccdf = xccdf
@@ -35,15 +69,17 @@ class ParsedObjects(object):
         self.rule = self.xccdf.rule(id)
         return self.rule
 
-    def add_shared_file(self, filename, content):
+    def add_shared_file(self, filename, content=None):
+        shared_file = SharedFile(filename)
+        if content:
+            shared_file.content = content
         if filename in self._shared_files:
-            if self._shared_files[filename].get('content') != content:
+            if shared_file != self._shared_files[filename]:
                 raise Exception("Attempt to overwrite shared file '{}'"
                                 " with different content".format(filename))
         else:
-            self._shared_files[filename] = {
-                'content': content,
-            }
+            self._shared_files[filename] = shared_file
+        return shared_file
 
     def add_entrypoint(self, filename):
         self._entrypoints.add(filename)
@@ -54,7 +90,7 @@ class ParsedObjects(object):
 
     @property
     def shared_files(self):
-        return self._shared_files.items()
+        return self._shared_files.values()
 
     @property
     def has_oval_data(self):

@@ -1,8 +1,6 @@
 import os
 import operator
 import html
-import shutil
-import stat
 import json
 import yaml
 import lxml.etree as etree
@@ -71,6 +69,7 @@ class ConvertYamlAction(object):
 
         benchmark_id = data.get('id') or parsed_args.filename
 
+        source_dir = os.path.dirname(parsed_args.filename)
         output_dir = os.path.join(parsed_args.output_dir, benchmark_id)
         os.makedirs(output_dir, exist_ok=True)
 
@@ -144,7 +143,6 @@ class ConvertYamlAction(object):
                                 .format(filename))
             shared_files[os.path.basename(filename)] = {'source': filename,}
 
-        entrypoints = set()
         for item in unlist(data.get('rules', [])):
             id, metadata = next(iter(item.items()))
             parser_type = metadata.get('type', 'sce')
@@ -156,9 +154,8 @@ class ConvertYamlAction(object):
             if 'variable' in metadata:
                 metadata['external-variables'] = variables_types
             res = parser.parse(id, metadata)
-            for shared_file, data in res.shared_files:
-                shared_files.setdefault(shared_file, {})
-                shared_files[shared_file].update(data)
+            for shared_file in res.shared_files:
+                shared_files.setdefault(shared_file.filename, shared_file)
             group.append_rule(res.rule)
             profile.append_rule(res.rule, selected=True)
             if res.has_oval_data:
@@ -174,23 +171,9 @@ class ConvertYamlAction(object):
                     name=res.definition.get_attr('id'),
                 )
                 self.extend_oval(oval, res)
-            for entrypoint in res.entrypoints:
-                entrypoints.add(entrypoint)
 
-        for shared_file, data in shared_files.items():
-            target = os.path.join(output_dir, os.path.basename(shared_file))
-            os.makedirs(os.path.dirname(target), exist_ok=True)
-            if 'source' in data:
-                shutil.copyfile(data['source'], target)
-            elif 'content' in data:
-                with open(target, 'w') as f:
-                    f.write(data['content'])
-
-        for entrypoint in entrypoints:
-            target = os.path.join(output_dir, os.path.basename(entrypoint))
-            if os.path.exists(target):
-                x = os.stat(target)
-                os.chmod(target, x.st_mode | stat.S_IEXEC)
+        for shared_file in shared_files.values():
+            shared_file.export(source_dir, output_dir)
 
         benchmark_filename = os.path.join(output_dir,
                                 '{}-xccdf.xml'.format(benchmark_id))

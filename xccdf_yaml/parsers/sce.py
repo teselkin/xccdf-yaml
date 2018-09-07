@@ -97,19 +97,23 @@ class ScriptCheckEngineParser(GenericParser):
         engine = check.get('engine', 'shell')
         entrypoint = check.get('entrypoint')
 
+        if entrypoint:
+            res.add_shared_file(entrypoint).set_executable()
+
         if engine == 'shell':
             if entrypoint is None:
                 entrypoint = 'entrypoint.sh'
-            res.add_shared_file(entrypoint, SHELL_ENTRYPOINT)
+                res.add_shared_file(entrypoint, content=SHELL_ENTRYPOINT)\
+                    .set_executable()
         elif engine == 'python':
             if entrypoint is None:
                 entrypoint = 'entrypoint.py'
-            res.add_shared_file(entrypoint, PYTHON_ENTRYPOINT)
+                res.add_shared_file(entrypoint, content=PYTHON_ENTRYPOINT)\
+                    .set_executable()
         else:
             raise Exception("Unsupported engine {}".format(engine))
 
-        res.add_entrypoint(entrypoint)
-        res.add_shared_file('{}.sh'.format(id), check['codeblock'])
+        res.add_shared_file('{}.sh'.format(id), content=check['codeblock'])
 
         check = rule.add_check(system_ns='sce')\
             .check_import(import_name='stdout')\
