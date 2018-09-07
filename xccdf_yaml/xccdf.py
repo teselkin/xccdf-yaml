@@ -58,7 +58,7 @@ class Benchmark(XmlBase, SetTitleMixin, SetDescriptionMixin):
         super().__init__('Benchmark')
         self._profiles = []
         self._groups = []
-        self._values = []
+        self._values = OrderedDict()
         self.set_attr('id', id)
         self.set_status(status, status_date)
         self.set_version(version)
@@ -87,9 +87,7 @@ class Benchmark(XmlBase, SetTitleMixin, SetDescriptionMixin):
         return group
 
     def new_value(self, id):
-        instance = XccdfValue(id)
-        self._values.append(instance)
-        return instance
+        return self._values.setdefault(id, XccdfValue(id))
 
     def update_elements(self):
         self.remove_elements(name='Profile')
@@ -97,7 +95,7 @@ class Benchmark(XmlBase, SetTitleMixin, SetDescriptionMixin):
             self.append(x)
 
         self.remove_elements(name='Value')
-        for x in self._values:
+        for x in self._values.values():
             self.append(x)
 
         self.remove_elements(name='Group')
