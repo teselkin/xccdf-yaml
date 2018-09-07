@@ -1,3 +1,4 @@
+from xccdf_yaml.parsers.common import GenericParser
 from xccdf_yaml.parsers.common import ParsedObjects
 
 import os
@@ -75,11 +76,7 @@ except:
 """
 
 
-class CmdExecParser(object):
-    def __init__(self, parsed_args=None, output_dir=None):
-        self.parsed_args = parsed_args
-        self.output_dir = output_dir or parsed_args.output_dir
-
+class CmdExecParser(GenericParser):
     def parse(self, id, metadata):
         res = ParsedObjects()
 

@@ -2,6 +2,7 @@ import os
 import operator
 import html
 import shutil
+import stat
 import json
 import yaml
 import lxml.etree as etree
@@ -137,10 +138,13 @@ class ConvertYamlAction(object):
                                 .format(filename))
             shared_files[os.path.basename(filename)] = {'source': filename,}
 
+        entrypoints = set()
         for item in unlist(data.get('rules', [])):
             id, metadata = next(iter(item.items()))
             parser_type = metadata.get('type', 'cmd_exec')
-            parser = PARSERS[parser_type](parsed_args, output_dir)
+            parser = PARSERS[parser_type](parsed_args=parsed_args,
+                                          output_dir=output_dir,
+                                          benchmark=benchmark)
             if platform and not metadata.get('affected', False):
                 metadata['affected'] = platform
             res = parser.parse(id, metadata)
@@ -156,6 +160,8 @@ class ConvertYamlAction(object):
                         name=res.definition.get_attr('id'),
                     )
                 self.extend_oval(oval, res)
+            for entrypoint in res.entrypoints:
+                entrypoints.add(entrypoint)
 
         for shared_file, data in shared_files.items():
             target = os.path.join(output_dir, os.path.basename(shared_file))
@@ -165,6 +171,12 @@ class ConvertYamlAction(object):
             elif 'content' in data:
                 with open(target, 'w') as f:
                     f.write(data['content'])
+
+        for entrypoint in entrypoints:
+            target = os.path.join(output_dir, os.path.basename(entrypoint))
+            if os.path.exists(target):
+                x = os.stat(target)
+                os.chmod(target, x.st_mode | stat.S_IEXEC)
 
         benchmark_filename = os.path.join(output_dir,
                                 '{}-xccdf.xml'.format(benchmark_id))
