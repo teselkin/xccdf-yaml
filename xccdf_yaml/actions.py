@@ -147,7 +147,7 @@ class ConvertYamlAction(object):
         entrypoints = set()
         for item in unlist(data.get('rules', [])):
             id, metadata = next(iter(item.items()))
-            parser_type = metadata.get('type', 'cmd_exec')
+            parser_type = metadata.get('type', 'sce')
             parser = PARSERS[parser_type](benchmark,
                                           parsed_args=parsed_args,
                                           output_dir=output_dir)
