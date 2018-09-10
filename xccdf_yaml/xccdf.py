@@ -198,6 +198,7 @@ class XccdfRule(XmlBase, SetTitleMixin, SetDescriptionMixin):
         'title',
         'description',
         'reference',
+        'ident',
         'rationale',
         'check',
     )
@@ -228,6 +229,12 @@ class XccdfRule(XmlBase, SetTitleMixin, SetDescriptionMixin):
         ref = XccdfReference(self.xccdf)
         self._dc_references.append(ref)
         return ref
+
+    def add_ident(self, name, system):
+        ident = self.sub_element('ident')\
+            .set_text(name)\
+            .set_attr('system', system)
+        return ident
 
     def update_elements(self):
         self.remove_elements(name='check')
