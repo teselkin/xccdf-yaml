@@ -4,6 +4,7 @@ import html
 import json
 import yaml
 import lxml.etree as etree
+import cgi
 
 from xccdf_yaml.misc import deepmerge
 from xccdf_yaml.yaml import YamlLoader
@@ -95,9 +96,9 @@ class ConvertYamlAction(object):
             for name, values in dc_metadata.items():
                 if isinstance(values, list):
                     for value in values:
-                        metadata.sub_element(name).set_text(value)
+                        metadata.sub_element(name).set_text(cgi.escape(value))
                 else:
-                    metadata.sub_element(name).set_text(values)
+                    metadata.sub_element(name).set_text(cgi.escape(values))
 
         profile_info = data.get('profile', {
             'id': 'default',
@@ -160,7 +161,7 @@ class ConvertYamlAction(object):
             template = _metadata.get('template')
             if template:
                 metadata = deepmerge(_metadata,
-                                     templates.get(_metadata['template']))
+                                     templates.get(template))
             else:
                 metadata = _metadata
             parser_type = metadata.get('type', 'sce')

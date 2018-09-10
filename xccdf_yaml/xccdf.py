@@ -211,8 +211,8 @@ class XccdfRule(XmlBase, SetTitleMixin, SetDescriptionMixin):
         'title',
         'description',
         'reference',
-        'ident',
         'rationale',
+        'ident',
         'check',
     )
 
