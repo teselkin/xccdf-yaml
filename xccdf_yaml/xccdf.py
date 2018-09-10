@@ -4,6 +4,7 @@ import re
 
 from collections import OrderedDict
 from xccdf_yaml.xml import XmlCommon
+from xccdf_yaml.xml import DublinCoreElementBase
 from xccdf_yaml.xml import set_default_ns
 
 
@@ -19,6 +20,11 @@ NSMAP = {
 class XmlBase(XmlCommon):
     def __init__(self, name, ns=None):
         super().__init__(name, ns=ns, nsmap=NSMAP)
+
+
+class XccdfDublinCoreElement(DublinCoreElementBase):
+    def __init__(self, name):
+        super().__init__(name, nsmap=NSMAP)
 
 
 class SetTitleMixin(object):
@@ -203,15 +209,35 @@ class XccdfRule(XmlBase, SetTitleMixin, SetDescriptionMixin):
         self.set_attr('selected', {True: '1', False: '0'}.get(selected, '0'))
         self.set_attr('severity', severity)
         self._checks = []
+        self._references = []
+        self._dc_references = []
 
     def add_check(self, **kwargs):
         check = self.xccdf.check(**kwargs)
         self._checks.append(check)
         return check
 
+    def add_reference(self, name, href=None):
+        ref = self.sub_element('reference').set_text(name)
+        if href:
+            ref.set_attr('href', href)
+        self._references.append(ref)
+        return ref
+
+    def add_dc_reference(self):
+        ref = XccdfReference(self.xccdf)
+        self._dc_references.append(ref)
+        return ref
+
     def update_elements(self):
         self.remove_elements(name='check')
         for x in self._checks:
+            self.append(x)
+
+        self.remove_elements(name='reference')
+        for x in self._references:
+            self.append(x)
+        for x in self._dc_references:
             self.append(x)
 
 
@@ -350,3 +376,9 @@ class XccdfValue(XmlBase, SetTitleMixin, SetDescriptionMixin):
         self.remove_elements(name='upper-bound')
         for x in self._upper_bound.values():
             self.append(x)
+
+
+class XccdfReference(XccdfDublinCoreElement):
+    def __init__(self, xccdf):
+        super().__init__('reference')
+        self.xccdf = xccdf

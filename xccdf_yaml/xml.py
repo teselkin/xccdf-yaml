@@ -14,6 +14,7 @@ def set_default_ns(element, default_ns=None, nsmap={}):
 
 
 class XmlCommon(object):
+    __elements__ = None
     __elements_order__ = None
 
     def __init__(self, name, ns=None, nsmap={}):
@@ -60,6 +61,9 @@ class XmlCommon(object):
         return element
 
     def sub_element(self, name, ns=None):
+        if isinstance(self.__elements__, list):
+            if name not in self.__elements__:
+                raise Exception("Element {} is not allowed".format(name))
         namespace = ns or self._ns
         element = XmlCommon(name, ns=namespace, nsmap=self._nsmap)
         self.append(element)
@@ -116,3 +120,31 @@ class XmlCommon(object):
 
     def __str__(self):
         return etree.tostring(self.xml(), pretty_print=True).decode()
+
+
+class DublinCoreElementBase(XmlCommon):
+    __elements__ = [
+        'contributor',
+        'coverage',
+        'creator',
+        'date',
+        'description',
+        'format',
+        'identifier',
+        'language',
+        'publisher',
+        'relation',
+        'rights',
+        'source',
+        'subject',
+        'title',
+        'type',
+    ]
+
+    def __init__(self, *args, **kwargs):
+        kwargs.setdefault('nsmap', {})
+        kwargs['nsmap']['dc'] = 'http://purl.org/dc/elements/1.1/'
+        super(DublinCoreElementBase, self).__init__(*args, **kwargs)
+
+    def sub_element(self, name, ns=None):
+        return super(DublinCoreElementBase, self).sub_element(name, ns='dc')

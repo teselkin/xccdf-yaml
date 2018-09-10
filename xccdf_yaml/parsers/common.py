@@ -21,6 +21,38 @@ class GenericParser(object):
     def about(cls):
         return ''
 
+    def parse(self, id, metadata):
+        result = ParsedObjects(self.xccdf)
+
+        rule = result.new_rule(id)
+
+        if 'title' in metadata:
+            rule.set_title(metadata['title'])
+
+        if 'description' in metadata:
+            rule.set_description(metadata['description'])
+
+        for reference in metadata.get('reference', []):
+            if isinstance(reference, dict):
+                rule.add_reference(reference['text'],
+                                   href=reference.get('url'))
+            else:
+                rule.add_reference(reference)
+
+        for reference in metadata.get('dc-reference', []):
+            ref = rule.add_dc_reference()
+            for element_name, element_value in reference.items():
+                if element_name == 'href':
+                    ref.set_attr('href', element_value)
+                else:
+                    ref.sub_element(element_name).set_text(element_value)
+
+        if 'rationale' in metadata:
+            rule.sub_element('rationale')\
+                .set_text(metadata['rationale'].rstrip())
+
+        return result
+
 
 class SharedFile(object):
     def __init__(self, filename):

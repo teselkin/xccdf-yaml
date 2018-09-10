@@ -70,52 +70,32 @@ except:
 
 class ScriptCheckEngineParser(GenericParser):
     def parse(self, id, metadata):
-        res = ParsedObjects(self.xccdf)
-
-        rule = res.new_rule(id)
-
-        if 'title' in metadata:
-            rule.set_title(metadata['title'])
-
-        if 'description' in metadata:
-            rule.set_description(metadata['description'])
-
-        for reference in metadata.get('reference', []):
-            ref = rule.sub_element('reference')
-            if isinstance(reference, dict):
-                ref.set_text(reference['text'])
-                if 'url' in reference:
-                    ref.set_attr('href', reference['url'])
-            else:
-                ref.set_text(reference)
-
-        if 'rationale' in metadata:
-            rule.sub_element('rationale')\
-                .set_text(metadata['rationale'].rstrip())
+        result = super(ScriptCheckEngineParser, self).parse(id, metadata)
+        rule = result.rule
 
         check = metadata['check']
         engine = check.get('engine', 'shell')
         entrypoint = check.get('entrypoint')
 
         if entrypoint:
-            res.add_shared_file(entrypoint).set_executable()
+            result.add_shared_file(entrypoint).set_executable()
 
         if engine == 'shell':
             if entrypoint is None:
                 entrypoint = 'entrypoint.sh'
-                res.add_shared_file(entrypoint, content=SHELL_ENTRYPOINT)\
+                result.add_shared_file(entrypoint, content=SHELL_ENTRYPOINT)\
                     .set_executable()
             entrypoint_target = '{}.sh'.format(id)
         elif engine == 'python':
             if entrypoint is None:
                 entrypoint = 'entrypoint.py'
-                res.add_shared_file(entrypoint, content=PYTHON_ENTRYPOINT)\
+                result.add_shared_file(entrypoint, content=PYTHON_ENTRYPOINT)\
                     .set_executable()
             entrypoint_target = '{}.py'.format(id)
         else:
             raise Exception("Unsupported engine {}".format(engine))
 
-        res.add_shared_file(entrypoint_target, content=check['codeblock'])
+        result.add_shared_file(entrypoint_target, content=check['codeblock'])
 
         check = rule.add_check(system_ns='sce')\
             .check_import(import_name='stdout')\
@@ -138,4 +118,4 @@ class ScriptCheckEngineParser(GenericParser):
                     check.check_export(value_id=item,
                                        export_name=export_name)
 
-        return res
+        return result
