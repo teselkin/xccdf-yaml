@@ -308,19 +308,17 @@ class XccdfValue(XmlBase, SetTitleMixin, SetDescriptionMixin):
         'upper-bound',
     )
 
-    def __init__(self, xccdf, id, value_type=None, operator=None):
+    def __init__(self, xccdf, id):
         super().__init__('Value')
         self.xccdf = xccdf
-        self.set_attr('id', self.xccdf.id('value', id))
-        if value_type:
-            self.set_attr('type', value_type)
-        if operator:
-            self.set_attr('operator', operator)
         self._value = OrderedDict()
         self._default_value = OrderedDict()
         self._match = OrderedDict()
         self._lower_bound = OrderedDict()
         self._upper_bound = OrderedDict()
+        self.set_attr('id', self.xccdf.id('value', id))
+        self.set_title(self.get_attr('id'))
+        self.set_description(self.get_attr('id'))
 
     def set_value(self, value, selector=None):
         if selector in self._value:
@@ -373,7 +371,14 @@ class XccdfValue(XmlBase, SetTitleMixin, SetDescriptionMixin):
         return self
 
     def set_operator(self, value):
-        self.set_attr('operator', value.lower())
+        allowed_operator_values = ['equals', 'not equal', 'less than',
+                                   'greater than', 'less than or equal',
+                                   'greater than or equal', 'pattern match']
+        if value in allowed_operator_values:
+            self.set_attr('operator', value.lower())
+        else:
+            raise Exception("Bad operator {}, not in {}"
+                            .format(value, allowed_operator_values))
         return self
 
     def update_elements(self):
