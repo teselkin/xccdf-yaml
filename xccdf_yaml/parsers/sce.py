@@ -37,9 +37,9 @@ trap_error(){
   fi
 }
 trap 'trap_error $?' ERR
-if [[ -f "${XCCDF_VALUE_FILENAME}" ]]; then
+if [[ -f "${XCCDF_VALUE_ENTRYPOINT}" ]]; then
   set -o xtrace
-  source "${XCCDF_VALUE_FILENAME}"
+  source "${XCCDF_VALUE_ENTRYPOINT}"
 fi
 exit_with PASS
 """
@@ -59,7 +59,7 @@ def exit_fail():
     sys.exit(XCCDF_RESULT_FAIL)
 
 try:
-    filename = os.environ.get('XCCDF_VALUE_FILENAME')
+    filename = os.environ.get('XCCDF_VALUE_ENTRYPOINT')
     exec(compile(open(filename, "rb").read(), filename, 'exec'), globals(), locals())
     exit_pass()
 except:
@@ -105,15 +105,17 @@ class ScriptCheckEngineParser(GenericParser):
                 entrypoint = 'entrypoint.sh'
                 res.add_shared_file(entrypoint, content=SHELL_ENTRYPOINT)\
                     .set_executable()
+            entrypoint_target = '{}.sh'.format(id)
         elif engine == 'python':
             if entrypoint is None:
                 entrypoint = 'entrypoint.py'
                 res.add_shared_file(entrypoint, content=PYTHON_ENTRYPOINT)\
                     .set_executable()
+            entrypoint_target = '{}.py'.format(id)
         else:
             raise Exception("Unsupported engine {}".format(engine))
 
-        res.add_shared_file('{}.sh'.format(id), content=check['codeblock'])
+        res.add_shared_file(entrypoint_target, content=check['codeblock'])
 
         check = rule.add_check(system_ns='sce')\
             .check_import(import_name='stdout')\
@@ -121,9 +123,9 @@ class ScriptCheckEngineParser(GenericParser):
             .check_content_ref(href=entrypoint)
 
         value = self.benchmark.new_value(
-            '{}-filename'.format(rule.get_attr('id')))\
-            .set_value('{}.sh'.format(id))
-        check.check_export(value.get_attr('id'), 'FILENAME')
+            '{}-entrypoint'.format(rule.get_attr('id')))\
+            .set_value(entrypoint_target)
+        check.check_export(value.get_attr('id'), 'ENTRYPOINT')
 
         if 'export' in metadata:
             for item in metadata['export']:
