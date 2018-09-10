@@ -78,6 +78,9 @@ class XccdfGenerator(object):
     def check(self, *args, **kwargs):
         return XccdfCheck(self, *args, **kwargs)
 
+    def dc_metadata(self, *args, **kwargs):
+        return XccdfMetadata(self, *args, **kwargs)
+
 
 class XccdfBenchmark(XmlBase, SetTitleMixin, SetDescriptionMixin):
     __elements_order__ = (
@@ -100,6 +103,7 @@ class XccdfBenchmark(XmlBase, SetTitleMixin, SetDescriptionMixin):
         self._profiles = OrderedDict()
         self._groups = OrderedDict()
         self._values = OrderedDict()
+        self._dc_metadata = None
         self.set_attr('id', self.xccdf.id('benchmark', id))
         self.set_status(status, status_date)
         self.set_version(version)
@@ -126,7 +130,16 @@ class XccdfBenchmark(XmlBase, SetTitleMixin, SetDescriptionMixin):
     def new_value(self, id):
         return self._values.setdefault(id, self.xccdf.value(id))
 
+    def add_dc_metadata(self):
+        metadata = self.xccdf.dc_metadata()
+        self._dc_metadata = metadata
+        return metadata
+
     def update_elements(self):
+        self.remove_elements(name='metadata')
+        if self._dc_metadata:
+            self.append(self._dc_metadata)
+
         self.remove_elements(name='Profile')
         for x in self._profiles.values():
             self.append(x)
@@ -388,4 +401,10 @@ class XccdfValue(XmlBase, SetTitleMixin, SetDescriptionMixin):
 class XccdfReference(XccdfDublinCoreElement):
     def __init__(self, xccdf):
         super().__init__('reference')
+        self.xccdf = xccdf
+
+
+class XccdfMetadata(XccdfDublinCoreElement):
+    def __init__(self, xccdf):
+        super().__init__('metadata')
         self.xccdf = xccdf

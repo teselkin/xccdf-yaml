@@ -87,6 +87,16 @@ class ConvertYamlAction(object):
             else:
                 benchmark.add_platform(platform.rstrip())
 
+        dc_metadata = data.get('dc-metadata', {})
+        if dc_metadata:
+            metadata = benchmark.add_dc_metadata()
+            for name, values in dc_metadata.items():
+                if isinstance(values, list):
+                    for value in values:
+                        metadata.sub_element(name).set_text(value)
+                else:
+                    metadata.sub_element(name).set_text(values)
+
         profile_info = data.get('profile', {
             'id': 'default',
             'title': 'Default Profile',
