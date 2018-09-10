@@ -5,6 +5,7 @@ import json
 import yaml
 import lxml.etree as etree
 
+from xccdf_yaml.misc import deepmerge
 from xccdf_yaml.yaml import YamlLoader
 from xccdf_yaml.xccdf import XccdfGenerator
 from xccdf_yaml.oval import OvalDefinitions
@@ -62,6 +63,7 @@ class ConvertYamlAction(object):
 
     def take_action(self, parsed_args):
         data = yaml.load(open(parsed_args.filename), YamlLoader)
+        templates = data.get('templates', {})
         data = data.get('benchmark')
         if data is None:
             raise Exception('No benchmark section found')
@@ -154,7 +156,13 @@ class ConvertYamlAction(object):
             shared_files[os.path.basename(filename)] = {'source': filename,}
 
         for item in unlist(data.get('rules', [])):
-            id, metadata = next(iter(item.items()))
+            id, _metadata = next(iter(item.items()))
+            template = _metadata.get('template')
+            if template:
+                metadata = deepmerge(_metadata,
+                                     templates.get(_metadata['template']))
+            else:
+                metadata = _metadata
             parser_type = metadata.get('type', 'sce')
             parser = PARSERS[parser_type](benchmark,
                                           parsed_args=parsed_args,
