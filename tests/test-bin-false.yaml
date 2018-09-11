@@ -4,7 +4,7 @@ test_bin_false:
   description: |
     This is a test script
   rationale: |
-    Some rationale
+    Some **rationale**
   reference:
   - ref1
   - text: Let me Google it for you

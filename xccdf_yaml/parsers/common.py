@@ -32,6 +32,9 @@ class GenericParser(object):
         if 'description' in metadata:
             rule.set_description(metadata['description'])
 
+        if 'rationale' in metadata:
+            rule.set_rationale(metadata['rationale'])
+
         for ident_name, ident_system in metadata.get('ident', {}).items():
             rule.add_ident(ident_name, ident_system)
 
@@ -49,10 +52,6 @@ class GenericParser(object):
                     ref.set_attr('href', element_value)
                 else:
                     ref.sub_element(element_name).set_text(element_value)
-
-        if 'rationale' in metadata:
-            rule.sub_element('rationale')\
-                .set_text(metadata['rationale'].rstrip())
 
         return result
 

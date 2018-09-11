@@ -2,6 +2,8 @@ test_sce_parser:
   type: sce
   title: "Test SCE parser"
   description: This is a test SCE script
+  rationale: |
+    Some **rationale**
   check:
     codeblock: |
       exit 101

@@ -1,11 +1,9 @@
-import lxml.etree as etree
-import markdown
 import re
 
 from collections import OrderedDict
 from xccdf_yaml.xml import XmlCommon
 from xccdf_yaml.xml import DublinCoreElementBase
-from xccdf_yaml.xml import set_default_ns
+from xccdf_yaml.markdown import MarkdownHtml
 
 
 NSMAP = {
@@ -38,12 +36,8 @@ class SetTitleMixin(object):
 class SetDescriptionMixin(object):
     def set_description(self, text):
         if text is not None:
-            content = etree.fromstring(markdown.markdown(text.rstrip()))
-            content = set_default_ns(
-                content, default_ns='xhtml',
-                nsmap={'xhtml': 'http://www.w3.org/1999/xhtml'})
             self.sub_element('description')\
-                .set_text(etree.tostring(content, pretty_print=True))
+                .set_text(str(MarkdownHtml(text)))
         return self
 
 
@@ -248,6 +242,11 @@ class XccdfRule(XmlBase, SetTitleMixin, SetDescriptionMixin):
             .set_text(name)\
             .set_attr('system', system)
         return ident
+
+    def set_rationale(self, text):
+        self.sub_element('rationale')\
+            .set_text(str(MarkdownHtml(text)))
+        return self
 
     def update_elements(self):
         self.remove_elements(name='check')
