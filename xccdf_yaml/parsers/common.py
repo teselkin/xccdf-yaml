@@ -32,9 +32,8 @@ class GenericParser(object):
         if 'description' in metadata:
             rule.set_description(metadata['description'])
 
-        for ident in metadata.get('ident', []):
-            for name, system in ident.items():
-                rule.add_ident(name, system)
+        for ident_name, ident_system in metadata.get('ident', {}).items():
+            rule.add_ident(ident_name, ident_system)
 
         for reference in metadata.get('reference', []):
             if isinstance(reference, dict):
