@@ -5,7 +5,7 @@ import markdown
 class MarkdownHtml(object):
     def __init__(self, text):
         self.text = text
-        self.html = etree.fromstring(markdown.markdown(self.text.rstrip()))
+        self.html = etree.HTML(markdown.markdown(self.text.rstrip()))
         self.nsmap = {'xhtml': 'http://www.w3.org/1999/xhtml'}
         self.html = self.set_default_ns(self.html, default_ns='xhtml')
 
