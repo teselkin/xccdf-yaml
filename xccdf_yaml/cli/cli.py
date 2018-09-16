@@ -8,9 +8,9 @@ from xccdf_yaml.xccdf import XccdfBenchmark
 
 from xccdf_yaml.oval import OvalDefinitions
 
-from xccdf_yaml.actions import ConvertYamlAction
-from xccdf_yaml.actions import LoadYamlAction
-from xccdf_yaml.actions import ValidateYamlAction
+from xccdf_yaml.cli.actions import ConvertYamlAction
+from xccdf_yaml.cli.actions import LoadYamlAction
+from xccdf_yaml.cli.actions import ValidateYamlAction
 
 
 class CliConvertYaml(Command):

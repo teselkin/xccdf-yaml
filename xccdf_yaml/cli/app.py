@@ -1,7 +1,7 @@
 import logging
 import sys
 
-import xccdf_yaml.cli as cli
+import xccdf_yaml.cli.cli as cli
 
 from cliff.app import App
 from cliff.commandmanager import CommandManager
