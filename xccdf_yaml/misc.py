@@ -37,3 +37,12 @@ def deepmerge(left, right):
         return result
 
     return right
+
+
+def unlist(seq):
+    if isinstance(seq, list):
+        for x in seq:
+            for y in unlist(x):
+                yield y
+    else:
+        yield seq

@@ -5,12 +5,8 @@ from cliff.lister import Lister
 from xccdf_yaml.parsers import PARSERS
 
 from xccdf_yaml.xccdf import XccdfBenchmark
-
 from xccdf_yaml.oval import OvalDefinitions
-
-from xccdf_yaml.cli.actions import ConvertYamlAction
-from xccdf_yaml.cli.actions import LoadYamlAction
-from xccdf_yaml.cli.actions import ValidateYamlAction
+from xccdf_yaml.core import XccdfYaml
 
 
 class CliConvertYaml(Command):
@@ -25,8 +21,8 @@ class CliConvertYaml(Command):
         return parser
 
     def take_action(self, parsed_args):
-        action = ConvertYamlAction()
-        return action.take_action(parsed_args)
+        xccdf_yaml = XccdfYaml()
+        return xccdf_yaml.convert(**vars(parsed_args))
 
 
 class CliLoadYaml(Command):
@@ -43,8 +39,8 @@ class CliLoadYaml(Command):
         return parser
 
     def take_action(self, parsed_args):
-        action = LoadYamlAction()
-        return action.take_action(parsed_args)
+        xccdf_yaml = XccdfYaml()
+        return xccdf_yaml.load(**vars(parsed_args))
 
 
 class CliValidateYaml(Command):
@@ -61,8 +57,8 @@ class CliValidateYaml(Command):
         return parser
 
     def take_action(self, parsed_args):
-        action = ValidateYamlAction()
-        return action.take_action(parsed_args)
+        xccdf_yaml = XccdfYaml()
+        return xccdf_yaml.validate(**vars(parsed_args))
 
 
 class CliTestXccdf(Command):

@@ -6,7 +6,7 @@ import yaml
 import lxml.etree as etree
 import cgi
 
-from xccdf_yaml.misc import deepmerge
+from xccdf_yaml.misc import deepmerge, unlist
 from xccdf_yaml.yaml import YamlLoader
 from xccdf_yaml.xccdf import XccdfGenerator
 from xccdf_yaml.oval import OvalDefinitions
@@ -16,64 +16,30 @@ from xccdf_yaml.parsers import PARSERS
 from jsonschema import validate
 
 
-def unlist(seq):
-    if isinstance(seq, list):
-        for x in seq:
-            for y in unlist(x):
-                yield y
-    else:
-        yield seq
-
-
-class ValidateYamlAction(object):
-    def take_action(self, parsed_args):
-        data = yaml.load(open(parsed_args.filename), YamlLoader)
-
-        if parsed_args.schema_type == 'auto':
-            _, ext = os.path.splitext(parsed_args.schema.lower())
-            if ext in ['.json', ]:
-                schema_type = 'json'
-            elif ext in ['.yaml', '.yml', ]:
-                schema_type = 'yaml'
-            else:
-                raise Exception("Unable to detect schema type for '{}'"
-                                .format(parsed_args.schema))
-        else:
-            schema_type = parsed_args.schema_type
-
-        if schema_type == 'json':
-            schema = json.load(open(parsed_args.schema))
-        elif schema_type == 'yaml':
-            schema = yaml.load(open(parsed_args.schema))
-        else:
-            raise Exception("Bad schema type '{}'".format(schema_type))
-
-        validate(data, schema)
-
-
-class ConvertYamlAction(object):
+class XccdfYaml(object):
     def __init__(self):
         pass
 
-    def extend_oval(self, oval, result):
+    def _extend_oval(self, oval, result):
         oval.append_definition(result.definition)
         oval.extend_tests(result.tests)
         oval.extend_objects(result.objects)
         oval.extend_states(result.states)
         oval.append_variable(result.variable)
 
-    def take_action(self, parsed_args):
-        data = yaml.load(open(parsed_args.filename), YamlLoader)
+    def convert(self, filename=None, output_dir=None, unescape=False,
+                **kwargs):
+        data = yaml.load(open(filename), YamlLoader)
         templates = data.get('templates', {})
         data = data.get('benchmark')
         if data is None:
             raise Exception('No benchmark section found')
         variables_types = {}
 
-        benchmark_id = data.get('id') or parsed_args.filename
+        benchmark_id = data.get('id') or filename
 
-        source_dir = os.path.dirname(parsed_args.filename)
-        output_dir = os.path.join(parsed_args.output_dir, benchmark_id)
+        source_dir = os.path.dirname(filename)
+        output_dir = os.path.join(output_dir, benchmark_id)
         os.makedirs(output_dir, exist_ok=True)
 
         generator = XccdfGenerator('mirantis.com')
@@ -149,12 +115,12 @@ class ConvertYamlAction(object):
         oval_ref = '{}-oval.xml'.format(benchmark_id)
 
         for item in data.get('shared-files', []):
-            filename = os.path.join(
-                os.path.dirname(parsed_args.filename), item)
-            if not os.path.exists(filename):
+            filepath = os.path.join(
+                os.path.dirname(filename), item)
+            if not os.path.exists(filepath):
                 raise Exception("Shared file '{}' not found"
-                                .format(filename))
-            shared_files[os.path.basename(filename)] = {'source': filename,}
+                                .format(filepath))
+            shared_files[os.path.basename(filepath)] = {'source': filepath,}
 
         for item in unlist(data.get('rules', [])):
             id, _metadata = next(iter(item.items()))
@@ -166,7 +132,7 @@ class ConvertYamlAction(object):
                 metadata = _metadata
             parser_type = metadata.get('type', 'sce')
             parser = PARSERS[parser_type](benchmark,
-                                          parsed_args=parsed_args,
+                                          parsed_args=kwargs,
                                           output_dir=output_dir)
             if platform and not metadata.get('affected', False):
                 metadata['affected'] = platform
@@ -189,7 +155,7 @@ class ConvertYamlAction(object):
                     href=oval_ref,
                     name=res.definition.get_attr('id'),
                 )
-                self.extend_oval(oval, res)
+                self._extend_oval(oval, res)
 
         for shared_file in shared_files.values():
             shared_file.export(source_dir, output_dir)
@@ -201,7 +167,7 @@ class ConvertYamlAction(object):
         benchmark_xml_str = etree.tostring(benchmark_xml,
                                            pretty_print=True).decode()
 
-        if parsed_args.unescape:
+        if unescape:
             benchmark_xml_str = html.unescape(benchmark_xml_str)
 
         if not oval.is_empty():
@@ -219,29 +185,50 @@ class ConvertYamlAction(object):
 
         return
 
+    def validate(self, filename=None, schema_type='auto', schema=''):
+        data = yaml.load(open(filename), YamlLoader)
 
-class LoadYamlAction(object):
-    def take_action(self, parsed_args):
-        data = yaml.load(open(parsed_args.filename), YamlLoader)
+        if schema_type == 'auto':
+            _, ext = os.path.splitext(schema.lower())
+            if ext in ['.json', ]:
+                schema_type = 'json'
+            elif ext in ['.yaml', '.yml', ]:
+                schema_type = 'yaml'
+            else:
+                raise Exception("Unable to detect schema type for '{}'"
+                                .format(schema))
+
+        if schema_type == 'json':
+            schema = json.load(open(schema))
+        elif schema_type == 'yaml':
+            schema = yaml.load(open(schema))
+        else:
+            raise Exception("Bad schema type '{}'".format(schema_type))
+
+        validate(data, schema)
+
+    def load(self, filename=None, format='', pretty=False, indent=2,
+             output=None):
+        data = yaml.load(open(filename), YamlLoader)
 
         result = None
-        if parsed_args.format == 'json':
-            if parsed_args.pretty:
+        if format == 'json':
+            if pretty:
                 result = json.dumps(data,
-                                    indent=parsed_args.indent,
+                                    indent=indent,
                                     sort_keys=True)
             else:
                 result = json.dumps(data)
-        elif parsed_args.format == 'yaml':
-            if parsed_args.pretty:
+        elif format == 'yaml':
+            if pretty:
                 result = yaml.dump(data,
                                    default_flow_style=False,
-                                   indent=parsed_args.indent)
+                                   indent=indent)
             else:
                 result = yaml.dump(data)
 
-        if parsed_args.output:
-            with open(parsed_args.output, 'w') as f:
+        if output:
+            with open(output, 'w') as f:
                 f.write(result)
             return
 
