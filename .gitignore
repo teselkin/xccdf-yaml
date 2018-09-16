@@ -1,6 +1,7 @@
 .eggs/
 .idea/
 build/
+sources/
 output/
 venv/
 *.egg-info/
