@@ -5,6 +5,9 @@ import json
 import yaml
 import lxml.etree as etree
 import cgi
+import textwrap
+
+from lxml.isoschematron import Schematron
 
 from xccdf_yaml.misc import deepmerge, unlist
 from xccdf_yaml.yaml import YamlLoader
@@ -15,6 +18,7 @@ from xccdf_yaml.common import SharedFiles
 from xccdf_yaml.parsers import PARSERS
 
 from jsonschema import validate
+from urllib.request import urlopen
 
 
 class XccdfYaml(object):
@@ -187,7 +191,7 @@ class XccdfYaml(object):
             f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
             f.write(benchmark_xml_str)
 
-        return
+        return output_file
 
     def validate(self, filename=None, schema_type='auto', schema='',
                  **kwargs):
@@ -238,3 +242,34 @@ class XccdfYaml(object):
             return
 
         return result
+
+    def schematron(self, filename=None, schematron_file=None, **kwargs):
+        if schematron_file is None:
+            schema_doc = etree.parse(urlopen(
+                'https://csrc.nist.gov/schema/xccdf/1.2/xccdf_1.2.sch'))
+        else:
+            with open(schematron_file) as f:
+                schema_doc = etree.parse(f)
+
+        schema = Schematron(schema_doc, store_report=True)
+
+        with open(filename) as f:
+            benchmark = etree.parse(f)
+
+        validation_result = schema.validate(benchmark)
+        if validation_result:
+            print('Benchmark {} PASSED schematron validation'.format(filename))
+        else:
+            print('Benchmark {} FAILED schematron validation'.format(filename))
+            errors = schema.validation_report.xpath(
+                'svrl:failed-assert/svrl:text',
+                namespaces={'svrl': 'http://purl.oclc.org/dsdl/svrl'}
+            )
+            print('Validation errors:')
+            for element in errors:
+                print("---")
+                print(textwrap.fill(element.text))
+
+            print("---")
+
+        return validation_result

@@ -20,12 +20,21 @@ class CliConvertYaml(Command):
                             dest='unescape')
         parser.add_argument('--output-dir', default='output')
         parser.add_argument('--output-file', default=None)
+        parser.add_argument('--schematron', action='store_true')
+        parser.add_argument('--schematron-file', default=None)
         parser.add_argument('filename')
         return parser
 
     def take_action(self, parsed_args):
         xccdf_yaml = XccdfYaml(basedir=parsed_args.basedir)
-        return xccdf_yaml.convert(**vars(parsed_args))
+        filename = xccdf_yaml.convert(**vars(parsed_args))
+        if parsed_args.schematron:
+            validation_result = xccdf_yaml.schematron(
+                filename=filename,
+                schematron_file=parsed_args.schematron_file)
+            if not validation_result:
+                raise Exception("Schematron validation failed")
+        return filename
 
 
 class CliLoadYaml(Command):
@@ -58,12 +67,29 @@ class CliValidateYaml(Command):
                             action='store',
                             choices=['auto', 'json', 'yaml'],
                             default='auto')
+        parser.add_argument('--schematron', action='store_true')
+        parser.add_argument('--schematron-file', default=None)
         parser.add_argument('filename')
         return parser
 
     def take_action(self, parsed_args):
         xccdf_yaml = XccdfYaml(basedir=parsed_args.basedir)
         return xccdf_yaml.validate(**vars(parsed_args))
+
+
+class CliSchematron(Command):
+    log = logging.getLogger(__name__)
+
+    def get_parser(self, prog_name):
+        parser = super().get_parser(prog_name)
+        parser.add_argument('--basedir', default=os.getcwd())
+        parser.add_argument('--schematron-file', default=None)
+        parser.add_argument('filename')
+        return parser
+
+    def take_action(self, parsed_args):
+        xccdf_yaml = XccdfYaml(basedir=parsed_args.basedir)
+        return xccdf_yaml.schematron(**vars(parsed_args))
 
 
 class CliTestXccdf(Command):
