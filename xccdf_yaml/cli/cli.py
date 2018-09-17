@@ -19,6 +19,7 @@ class CliConvertYaml(Command):
         parser.add_argument('--no-unescape', action='store_false',
                             dest='unescape')
         parser.add_argument('--output-dir', default='output')
+        parser.add_argument('--output-file', default=None)
         parser.add_argument('filename')
         return parser
 

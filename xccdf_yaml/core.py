@@ -28,8 +28,8 @@ class XccdfYaml(object):
         oval.extend_states(result.states)
         oval.append_variable(result.variable)
 
-    def convert(self, filename=None, output_dir=None, unescape=False,
-                **kwargs):
+    def convert(self, filename=None, output_dir=None, output_file=None,
+                unescape=False, **kwargs):
         benchmark_source = filename
         data = yaml.load(open(filename), YamlLoader)
         templates = data.get('templates', {})
@@ -161,9 +161,6 @@ class XccdfYaml(object):
 
         shared_files.export(output_dir)
 
-        benchmark_filename = os.path.join(output_dir,
-                                '{}-xccdf.xml'.format(benchmark_id))
-
         benchmark_xml = benchmark.xml()
         benchmark_xml_str = etree.tostring(benchmark_xml,
                                            pretty_print=True).decode()
@@ -180,7 +177,13 @@ class XccdfYaml(object):
                 f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
                 f.write(oval_xml_str)
 
-        with open(benchmark_filename, 'w') as f:
+        if output_file is None:
+            output_file = os.path.join(output_dir,
+                                '{}-xccdf.xml'.format(benchmark_id))
+        else:
+            output_file = os.path.join(output_dir, output_file)
+
+        with open(output_file, 'w') as f:
             f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
             f.write(benchmark_xml_str)
 
