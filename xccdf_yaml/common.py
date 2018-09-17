@@ -37,12 +37,9 @@ class SharedFile(object):
         if filename is None:
             filename = source
 
-        path = os.path.join(basedir, source)
-        if not os.path.exists(path):
-            raise Exception("Shared file '{}' not found".format(path))
-
         obj = cls(basedir=basedir, filename=filename)
         obj.set_source(source)
+
         return obj
 
     @property
@@ -97,6 +94,8 @@ class SharedFile(object):
 
             if os.path.exists(source):
                 shutil.copyfile(source, target)
+            else:
+                raise Exception("Shared file '{}' not found".format(source))
 
         if os.path.exists(target):
             if self._executable:
@@ -123,13 +122,10 @@ class SharedFiles(object):
         if filename is None:
             filename = source
 
-        path = os.path.join(self.basedir, source)
-        if not os.path.exists(path):
-            raise Exception("Shared file '{}' not found".format(path))
-
         shared_file = SharedFile.from_source(
             basedir=self.basedir, source=source, filename=filename)
         self.append(shared_file)
+
         return shared_file
 
     def setdefault(self, shared_file):

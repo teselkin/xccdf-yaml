@@ -76,33 +76,15 @@ except:
 
 class CmdExecParser(GenericParser):
     def parse(self, id, metadata):
-        res = ParsedObjects(self.xccdf)
-
-        rule = res.new_rule(id)
-
-        if 'title' in metadata:
-            rule.set_title(metadata['title'])
-
-        if 'description' in metadata:
-            rule.set_description(metadata['description'])
-
-        for reference in metadata.get('reference', []):
-            ref = rule.sub_element('reference')
-            if isinstance(reference, dict):
-                ref.set_text(reference['text'])
-                if 'url' in reference:
-                    ref.set_attr('href', reference['url'])
-            else:
-                ref.set_text(reference)
-
-        if 'rationale' in metadata:
-            rule.sub_element('rationale')\
-                .set_text(metadata['rationale'].rstrip())
+        result = super(CmdExecParser, self).parse(id, metadata)
+        rule = result.rule
 
         if 'cmd' in metadata:
-            res.add_shared_file('wrapper-head.sh', content=SHELL_WRAPPER_HEAD)\
+            self.add_shared_file('wrapper-head.sh',
+                                 content=SHELL_WRAPPER_HEAD)\
                 .set_executable()
-            res.add_shared_file('wrapper-tail.sh', content=SHELL_WRAPPER_TAIL)\
+            self.add_shared_file('wrapper-tail.sh',
+                                 content=SHELL_WRAPPER_TAIL)\
                 .set_executable()
             filename = '{}.sh'.format(id)
             content = []
@@ -128,7 +110,7 @@ class CmdExecParser(GenericParser):
         else:
             raise Exception('No script or cmdline found')
 
-        res.add_shared_file(filename,
+        self.add_shared_file(filename,
                             content='\n'.join(content)).set_executable()
 
         check = rule.add_check(system_ns='sce')\
@@ -147,4 +129,4 @@ class CmdExecParser(GenericParser):
                     check.check_export(value_id=item,
                                        export_name=export_name)
 
-        return res
+        return result
