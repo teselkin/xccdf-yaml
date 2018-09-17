@@ -1,4 +1,5 @@
 import logging
+import os
 
 from cliff.command import Command
 from cliff.lister import Lister
@@ -14,6 +15,7 @@ class CliConvertYaml(Command):
 
     def get_parser(self, prog_name):
         parser = super().get_parser(prog_name)
+        parser.add_argument('--basedir', default=os.getcwd())
         parser.add_argument('--no-unescape', action='store_false',
                             dest='unescape')
         parser.add_argument('--output-dir', default='output')
@@ -21,7 +23,7 @@ class CliConvertYaml(Command):
         return parser
 
     def take_action(self, parsed_args):
-        xccdf_yaml = XccdfYaml()
+        xccdf_yaml = XccdfYaml(basedir=parsed_args.basedir)
         return xccdf_yaml.convert(**vars(parsed_args))
 
 
@@ -30,6 +32,7 @@ class CliLoadYaml(Command):
 
     def get_parser(self, prog_name):
         parser = super().get_parser(prog_name)
+        parser.add_argument('--basedir', default=os.getcwd())
         parser.add_argument('--format', dest='format', action='store',
                             choices=['json', 'yaml'], default='json')
         parser.add_argument('--indent', type=int, default=2)
@@ -39,7 +42,7 @@ class CliLoadYaml(Command):
         return parser
 
     def take_action(self, parsed_args):
-        xccdf_yaml = XccdfYaml()
+        xccdf_yaml = XccdfYaml(basedir=parsed_args.basedir)
         return xccdf_yaml.load(**vars(parsed_args))
 
 
@@ -48,6 +51,7 @@ class CliValidateYaml(Command):
 
     def get_parser(self, prog_name):
         parser = super().get_parser(prog_name)
+        parser.add_argument('--basedir', default=os.getcwd())
         parser.add_argument('--schema')
         parser.add_argument('--schema-type', dest='schema_type',
                             action='store',
@@ -57,7 +61,7 @@ class CliValidateYaml(Command):
         return parser
 
     def take_action(self, parsed_args):
-        xccdf_yaml = XccdfYaml()
+        xccdf_yaml = XccdfYaml(basedir=parsed_args.basedir)
         return xccdf_yaml.validate(**vars(parsed_args))
 
 

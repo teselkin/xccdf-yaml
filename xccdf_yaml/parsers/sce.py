@@ -1,5 +1,4 @@
 from xccdf_yaml.parsers.common import GenericParser
-from xccdf_yaml.parsers.common import ParsedObjects
 
 import re
 
@@ -78,24 +77,24 @@ class ScriptCheckEngineParser(GenericParser):
         entrypoint = check.get('entrypoint')
 
         if entrypoint:
-            result.add_shared_file(entrypoint).set_executable()
+            self.add_shared_file(entrypoint).set_executable()
 
         if engine == 'shell':
             if entrypoint is None:
                 entrypoint = 'entrypoint.sh'
-                result.add_shared_file(entrypoint, content=SHELL_ENTRYPOINT)\
+                self.add_shared_file(entrypoint, content=SHELL_ENTRYPOINT)\
                     .set_executable()
             entrypoint_target = '{}.sh'.format(id)
         elif engine == 'python':
             if entrypoint is None:
                 entrypoint = 'entrypoint.py'
-                result.add_shared_file(entrypoint, content=PYTHON_ENTRYPOINT)\
+                self.add_shared_file(entrypoint, content=PYTHON_ENTRYPOINT)\
                     .set_executable()
             entrypoint_target = '{}.py'.format(id)
         else:
             raise Exception("Unsupported engine {}".format(engine))
 
-        result.add_shared_file(entrypoint_target, content=check['codeblock'])
+        self.add_shared_file(entrypoint_target, content=check['codeblock'])
 
         check = rule.add_check(system_ns='sce')\
             .check_import(import_name='stdout')\

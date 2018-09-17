@@ -10,6 +10,7 @@ from xccdf_yaml.misc import deepmerge, unlist
 from xccdf_yaml.yaml import YamlLoader
 from xccdf_yaml.xccdf import XccdfGenerator
 from xccdf_yaml.oval import OvalDefinitions
+from xccdf_yaml.common import SharedFiles
 
 from xccdf_yaml.parsers import PARSERS
 
@@ -17,8 +18,8 @@ from jsonschema import validate
 
 
 class XccdfYaml(object):
-    def __init__(self):
-        pass
+    def __init__(self, basedir=None):
+        self.basedir = basedir
 
     def _extend_oval(self, oval, result):
         oval.append_definition(result.definition)
@@ -29,6 +30,7 @@ class XccdfYaml(object):
 
     def convert(self, filename=None, output_dir=None, unescape=False,
                 **kwargs):
+        benchmark_source = filename
         data = yaml.load(open(filename), YamlLoader)
         templates = data.get('templates', {})
         data = data.get('benchmark')
@@ -109,18 +111,19 @@ class XccdfYaml(object):
                     elif item is not None:
                         value_element.set(key, str(item))
 
-        shared_files = {}
+        shared_files = SharedFiles(
+            basedir=self.basedir,
+            workdir=os.path.dirname(os.path.abspath(benchmark_source)))
 
         oval = OvalDefinitions()
         oval_ref = '{}-oval.xml'.format(benchmark_id)
 
         for item in data.get('shared-files', []):
-            filepath = os.path.join(
-                os.path.dirname(filename), item)
-            if not os.path.exists(filepath):
-                raise Exception("Shared file '{}' not found"
-                                .format(filepath))
-            shared_files[os.path.basename(filepath)] = {'source': filepath,}
+            if isinstance(item, dict):
+                for filename, source in item.items():
+                    shared_files.from_source(source=source, filename=filename)
+            else:
+                shared_files.from_source(source=item)
 
         for item in unlist(data.get('rules', [])):
             id, _metadata = next(iter(item.items()))
@@ -133,14 +136,13 @@ class XccdfYaml(object):
             parser_type = metadata.get('type', 'sce')
             parser = PARSERS[parser_type](benchmark,
                                           parsed_args=kwargs,
-                                          output_dir=output_dir)
+                                          output_dir=output_dir,
+                                          shared_files=shared_files)
             if platform and not metadata.get('affected', False):
                 metadata['affected'] = platform
             if 'variable' in metadata:
                 metadata['external-variables'] = variables_types
             res = parser.parse(id, metadata)
-            for shared_file in res.shared_files:
-                shared_files.setdefault(shared_file.filename, shared_file)
             group.append_rule(res.rule)
             profile.append_rule(res.rule, selected=True)
             if res.has_oval_data:
@@ -157,8 +159,7 @@ class XccdfYaml(object):
                 )
                 self._extend_oval(oval, res)
 
-        for shared_file in shared_files.values():
-            shared_file.export(source_dir, output_dir)
+        shared_files.export(output_dir)
 
         benchmark_filename = os.path.join(output_dir,
                                 '{}-xccdf.xml'.format(benchmark_id))
