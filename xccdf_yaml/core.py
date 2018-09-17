@@ -189,7 +189,8 @@ class XccdfYaml(object):
 
         return
 
-    def validate(self, filename=None, schema_type='auto', schema=''):
+    def validate(self, filename=None, schema_type='auto', schema='',
+                 **kwargs):
         data = yaml.load(open(filename), YamlLoader)
 
         if schema_type == 'auto':
@@ -212,7 +213,7 @@ class XccdfYaml(object):
         validate(data, schema)
 
     def load(self, filename=None, format='', pretty=False, indent=2,
-             output=None):
+             output=None, **kwargs):
         data = yaml.load(open(filename), YamlLoader)
 
         result = None
