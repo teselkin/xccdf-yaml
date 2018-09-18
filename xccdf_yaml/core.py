@@ -6,6 +6,9 @@ import yaml
 import lxml.etree as etree
 import cgi
 import textwrap
+import tempfile
+import subprocess
+import traceback
 
 from lxml.isoschematron import Schematron
 
@@ -194,27 +197,61 @@ class XccdfYaml(object):
         return output_file
 
     def validate(self, filename=None, schema_type='auto', schema='',
-                 **kwargs):
-        data = yaml.load(open(filename), YamlLoader)
-
+                 skip_valid=False, **kwargs):
         if schema_type == 'auto':
             _, ext = os.path.splitext(schema.lower())
             if ext in ['.json', ]:
                 schema_type = 'json'
             elif ext in ['.yaml', '.yml', ]:
                 schema_type = 'yaml'
+            elif ext in ['.xml', '.xsd', ]:
+                schema_type = 'xml'
             else:
                 raise Exception("Unable to detect schema type for '{}'"
                                 .format(schema))
 
-        if schema_type == 'json':
-            schema = json.load(open(schema))
-        elif schema_type == 'yaml':
-            schema = yaml.load(open(schema))
-        else:
-            raise Exception("Bad schema type '{}'".format(schema_type))
+        if schema_type in ['json', 'yaml']:
+            if schema_type == 'json':
+                schema = json.load(open(schema))
+            else:
+                schema = yaml.load(open(schema))
 
-        validate(data, schema)
+            try:
+                data = yaml.load(open(filename), YamlLoader)
+                validate(data, schema)
+            except:
+                traceback.print_exc()
+                if not skip_valid:
+                    raise
+            return
+
+        if schema_type == 'xml':
+            with open(schema) as f:
+                schema_root = etree.parse(f)
+                schema_doc = etree.XMLSchema(schema_root)
+
+            with open(filename) as f:
+                benchmark = etree.parse(f)
+
+            success = schema_doc.validate(benchmark)
+            if success:
+                print("XMLSchema validation passed")
+            else:
+                print("XMLSchema validation errors:")
+                for error in schema_doc.error_log:
+                    print('---')
+                    print(str(error))
+                print('---')
+
+            if skip_valid:
+                return success
+
+            if not success:
+                raise Exception("XMLSchema validation failed")
+
+            return success
+
+        raise Exception("Bad schema type '{}'".format(schema_type))
 
     def load(self, filename=None, format='', pretty=False, indent=2,
              output=None, **kwargs):
@@ -243,7 +280,8 @@ class XccdfYaml(object):
 
         return result
 
-    def schematron(self, filename=None, schematron_file=None, **kwargs):
+    def schematron(self, filename=None, schematron_file=None, skip_valid=False,
+                   **kwargs):
         if schematron_file is None:
             schema_doc = etree.parse(urlopen(
                 'https://csrc.nist.gov/schema/xccdf/1.2/xccdf_1.2.sch'))
@@ -259,17 +297,57 @@ class XccdfYaml(object):
         validation_result = schema.validate(benchmark)
         if validation_result:
             print('Benchmark {} PASSED schematron validation'.format(filename))
+            return True
         else:
             print('Benchmark {} FAILED schematron validation'.format(filename))
             errors = schema.validation_report.xpath(
                 'svrl:failed-assert/svrl:text',
                 namespaces={'svrl': 'http://purl.oclc.org/dsdl/svrl'}
             )
-            print('Validation errors:')
+            print('Schematron validation errors:')
             for element in errors:
                 print("---")
                 print(textwrap.fill(element.text))
-
             print("---")
 
-        return validation_result
+            if skip_valid:
+                return validation_result
+
+            raise Exception("Schematron validation failed")
+
+    def datastream(self, filename=None, skip_valid=False, output_file=None,
+                   **kwargs):
+        cmd = ['oscap', 'ds', 'sds-compose']
+        if skip_valid:
+            cmd.append('--skip-valid')
+        cmd.append(filename)
+        if output_file is None:
+            output_file = "{}-ds.xml".format(
+                filename.split('.', maxsplit=1)[0])
+        cmd.append(output_file)
+
+        stderr_fd, stderr_filename = tempfile.mkstemp()
+        try:
+            stdout = subprocess.check_output(cmd, stderr=stderr_fd)
+            exitcode = 0
+        except subprocess.CalledProcessError as e:
+            exitcode = e.returncode
+            stdout = e.output
+
+        if exitcode != 0:
+            output_file = None
+            print("EXITCODE: {}".format(str(exitcode)))
+            print("----- STDOUT BEGIN -----")
+            print(stdout.decode().strip())
+            print("-----  STDOUT END  -----")
+
+            print("----- STDERR BEGIN -----")
+            with open(stderr_filename) as stderr:
+                print(stderr.read().strip())
+            print("-----  STDERR END  -----")
+
+        os.remove(stderr_filename)
+
+        print("Source datastream: {}".format(output_file))
+
+        return output_file

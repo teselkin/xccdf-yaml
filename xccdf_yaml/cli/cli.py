@@ -20,21 +20,33 @@ class CliConvertYaml(Command):
                             dest='unescape')
         parser.add_argument('--output-dir', default='output')
         parser.add_argument('--output-file', default=None)
+        parser.add_argument('--schema', default=None)
         parser.add_argument('--schematron', action='store_true')
         parser.add_argument('--schematron-file', default=None)
+        parser.add_argument('--datastream', action='store_true')
+        parser.add_argument('--datastream-file', default=None)
+        parser.add_argument('--skip-valid', action='store_true')
         parser.add_argument('filename')
         return parser
 
     def take_action(self, parsed_args):
         xccdf_yaml = XccdfYaml(basedir=parsed_args.basedir)
-        filename = xccdf_yaml.convert(**vars(parsed_args))
+        benchmark_xccdf = xccdf_yaml.convert(**vars(parsed_args))
+        if parsed_args.schema:
+            xccdf_yaml.validate(
+                filename=benchmark_xccdf,
+                schema=parsed_args.schema,
+                skip_valid=parsed_args.skip_valid,
+            )
         if parsed_args.schematron:
-            validation_result = xccdf_yaml.schematron(
-                filename=filename,
+            xccdf_yaml.schematron(
+                filename=benchmark_xccdf,
                 schematron_file=parsed_args.schematron_file)
-            if not validation_result:
-                raise Exception("Schematron validation failed")
-        return filename
+        if parsed_args.datastream:
+            xccdf_yaml.datastream(filename=benchmark_xccdf,
+                                  skip_valid=parsed_args.skip_valid,
+                                  output_file=parsed_args.datastream_file)
+        return benchmark_xccdf
 
 
 class CliLoadYaml(Command):
@@ -62,13 +74,14 @@ class CliValidateYaml(Command):
     def get_parser(self, prog_name):
         parser = super().get_parser(prog_name)
         parser.add_argument('--basedir', default=os.getcwd())
-        parser.add_argument('--schema')
+        parser.add_argument('--schema', default=None)
         parser.add_argument('--schema-type', dest='schema_type',
                             action='store',
                             choices=['auto', 'json', 'yaml'],
                             default='auto')
         parser.add_argument('--schematron', action='store_true')
         parser.add_argument('--schematron-file', default=None)
+        parser.add_argument('--skip-valid', action='store_true')
         parser.add_argument('filename')
         return parser
 
@@ -84,12 +97,47 @@ class CliSchematron(Command):
         parser = super().get_parser(prog_name)
         parser.add_argument('--basedir', default=os.getcwd())
         parser.add_argument('--schematron-file', default=None)
+        parser.add_argument('--skip-valid', action='store_true')
         parser.add_argument('filename')
         return parser
 
     def take_action(self, parsed_args):
         xccdf_yaml = XccdfYaml(basedir=parsed_args.basedir)
         return xccdf_yaml.schematron(**vars(parsed_args))
+
+
+class CliDatastream(Command):
+    log = logging.getLogger(__name__)
+
+    def get_parser(self, prog_name):
+        parser = super().get_parser(prog_name)
+        parser.add_argument('--basedir', default=os.getcwd())
+        parser.add_argument('--schema', default='None')
+        parser.add_argument('--schematron', action='store_true')
+        parser.add_argument('--schematron-file', default=None)
+        parser.add_argument('--skip-valid', action='store_true')
+        parser.add_argument('filename')
+        return parser
+
+    def take_action(self, parsed_args):
+        xccdf_yaml = XccdfYaml(basedir=parsed_args.basedir)
+        if parsed_args.schema:
+            xccdf_yaml.validate(filename=parsed_args.filename,
+                                schema=parsed_args.schema,
+                                skip_valid=parsed_args.skip_valid)
+        if parsed_args.schematron:
+            xccdf_yaml.schematron(
+                filename=parsed_args.filename,
+                schematron_file=parsed_args.schematron_file)
+        datastream_file = xccdf_yaml.datastream(**vars(parsed_args))
+        if parsed_args.schema:
+            xccdf_yaml.validate(filename=datastream_file,
+                                schema=parsed_args.schema,
+                                skip_valid=parsed_args.skip_valid)
+        if parsed_args.schematron:
+            xccdf_yaml.schematron(
+                filename=datastream_file,
+                schematron_file=parsed_args.schematron_file)
 
 
 class CliTestXccdf(Command):

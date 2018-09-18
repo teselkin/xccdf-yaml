@@ -13,6 +13,7 @@ class XCCDF_YAML_Manager(CommandManager):
         'load': cli.CliLoadYaml,
         'validate': cli.CliValidateYaml,
         'schematron': cli.CliSchematron,
+        'datastream': cli.CliDatastream,
         'about-parser': cli.CliAboutParser,
         'list-parsers': cli.CliListParsers,
         'test-xccdf': cli.CliTestXccdf,
