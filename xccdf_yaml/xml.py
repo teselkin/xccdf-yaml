@@ -11,7 +11,7 @@ class XmlCommon(object):
         self._name = name
         self._nsmap = nsmap
         self._ns = ns
-        self._children = {}
+        self._children = OrderedDict()
         # Use OrderedDict for storing attributes to prevent changes in
         # attributes ordering on each convertion.
         self._attrs = OrderedDict()

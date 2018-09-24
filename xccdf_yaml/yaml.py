@@ -67,7 +67,7 @@ class YamlLoader(yaml.Loader):
     def include_dir(self, node):
         path = os.path.join(self._root, self.construct_scalar(node))
         data = []
-        for name in os.listdir(path):
+        for name in sorted(os.listdir(path)):
             filename = os.path.join(path, name)
             if os.path.isfile(filename):
                 if name.endswith('.yaml') or name.endswith('.yml'):
