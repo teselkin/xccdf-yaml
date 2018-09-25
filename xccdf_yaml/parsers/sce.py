@@ -1,6 +1,7 @@
 from xccdf_yaml.parsers.common import GenericParser
 
 import re
+import base64
 
 
 SHELL_ENTRYPOINT = """#!/bin/bash
@@ -72,9 +73,9 @@ class ScriptCheckEngineParser(GenericParser):
         result = super(ScriptCheckEngineParser, self).parse(id, metadata)
         rule = result.rule
 
-        check = metadata['check']
-        engine = check.get('engine', 'shell')
-        entrypoint = check.get('entrypoint')
+        check_metadata = metadata['check']
+        engine = check_metadata.get('engine', 'shell')
+        entrypoint = check_metadata.get('entrypoint')
 
         if entrypoint:
             self.add_shared_file(entrypoint).set_executable()
@@ -94,17 +95,25 @@ class ScriptCheckEngineParser(GenericParser):
         else:
             raise Exception("Unsupported engine {}".format(engine))
 
-        self.add_shared_file(entrypoint_target, content=check['codeblock'])
-
         check = rule.add_check(system_ns='sce')\
             .check_import(import_name='stdout')\
             .check_import(import_name='stderr')\
             .check_content_ref(href=entrypoint)
 
+        # value = self.benchmark.new_value(
+        #     '{}-entrypoint'.format(rule.get_attr('id')))\
+        #     .set_value(entrypoint_target)
+        # check.check_export(value.get_attr('id'), 'ENTRYPOINT')
+        # self.add_shared_file(entrypoint_target,
+        #                      content=check_metadata['codeblock'])
+
+        marker = r'```'.encode()
+        codeblock = check_metadata['codeblock'].encode()
         value = self.benchmark.new_value(
-            '{}-entrypoint'.format(rule.get_attr('id')))\
-            .set_value(entrypoint_target)
-        check.check_export(value.get_attr('id'), 'ENTRYPOINT')
+            '{}-codeblock'.format(rule.get_attr('id')))\
+            .set_value(base64.b64encode(codeblock).decode())\
+            .set_description((marker + codeblock + marker).decode())
+        check.check_export(value.get_attr('id'), 'CODEBLOCK')
 
         if 'export' in metadata:
             for item in metadata['export']:
