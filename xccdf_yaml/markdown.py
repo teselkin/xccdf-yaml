@@ -23,12 +23,15 @@ class MarkdownHtml(object):
 
     def __str__(self):
         elements = self.html.xpath(
-            '/{ns}:html/{ns}:body/{ns}:p'.format(ns=self.ns),
+            '/{ns}:html/{ns}:body'.format(ns=self.ns),
             namespaces=self.nsmap)
-        paragraphs = ['',]
-        for x in elements:
-            text = etree.tostring(x, pretty_print=True).decode().strip()
-            if text:
-                paragraphs.append(text)
-        paragraphs.append('')
-        return '\n'.join(paragraphs)
+        blocks = []
+        for element in elements:
+            for x in element:
+                text = etree.tostring(x, pretty_print=True).decode().strip()
+                if text:
+                    blocks.append(text)
+                if x.tail:
+                    blocks.append(x.tail)
+        return '\n{}\n'.format(
+            '\n'.join(filter(lambda x: x.strip(), blocks)))
