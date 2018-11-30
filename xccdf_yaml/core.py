@@ -9,6 +9,8 @@ import textwrap
 import tempfile
 import subprocess
 import traceback
+import zlib
+import base64
 
 from lxml.isoschematron import Schematron
 
@@ -100,15 +102,37 @@ class XccdfYaml(object):
                 variables_types[value_id] = value_data['type']
 
                 value_element = benchmark.new_value(value_id)
-                for key in ['type', 'operator']:
-                    if key in value_data:
-                        value_element.set_attr(key, value_data[key])
+
+                value_type = value_data.get('type', 'string')
+                value = value_data.get('value')
+
                 if 'title' in value_data:
                     value_element.set_title(value_data['title'])
+
                 if 'description' in value_data:
                     value_element.set_description(value_data['description'])
+                else:
+                    if value_type in ['base64', 'base64zip']:
+                        value_element.set_description(value, plaintext=True)
 
-                for key in ['value', 'default', 'lower-bound', 'upper-bound']:
+                if value_type == 'base64':
+                    value = base64.b64encode(value.encode()).decode()
+                elif value_type == 'base64zip':
+                    value = base64.b64encode(zlib.compress(value.encode()))\
+                        .decode()
+
+                if value_type in ['base64', 'base64zip']:
+                    value_element.set_attr('type', 'string')
+                else:
+                    value_element.set_attr('type', value_type)
+
+                value_element.set('value', value)
+
+                for key in ['operator',]:
+                    if key in value_data:
+                        value_element.set_attr(key, value_data[key])
+
+                for key in ['default', 'lower-bound', 'upper-bound']:
                     item = value_data.get(key)
                     if isinstance(item, list):
                         for x in item:

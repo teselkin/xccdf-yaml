@@ -124,6 +124,9 @@ class XccdfBenchmark(XmlBase, SetTitleMixin, SetDescriptionMixin):
     def new_value(self, id):
         return self._values.setdefault(id, self.xccdf.value(id))
 
+    def get_value(self, id):
+        return self._values.get(id)
+
     def add_dc_metadata(self):
         metadata = self.xccdf.dc_metadata()
         self._dc_metadata = metadata

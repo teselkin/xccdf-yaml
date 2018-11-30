@@ -79,6 +79,13 @@ class YamlLoader(yaml.Loader):
                             data.append(content)
         return data
 
+    def include_raw(self, node):
+        filename = os.path.join(self._root, self.construct_scalar(node))
+
+        with open(filename, 'r') as f:
+            return f.read()
+
 
 YamlLoader.add_constructor('!include', YamlLoader.include)
 YamlLoader.add_constructor('!include-dir', YamlLoader.include_dir)
+YamlLoader.add_constructor('!include-raw', YamlLoader.include_raw)

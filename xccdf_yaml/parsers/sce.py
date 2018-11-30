@@ -114,6 +114,17 @@ class ScriptCheckEngineParser(GenericParser):
             .set_description(codeblock, plaintext=True)
         check.check_export(value.get_attr('id'), 'CODEBLOCK')
 
+        index = 0
+        for id in check_metadata.get('include', []):
+            value = self.benchmark.get_value(id)
+            if value:
+                index += 1
+                check.check_export(value.get_attr('id'), 'INCLUDE_{}'
+                                   .format(str(index).rjust(2, '0')))
+            else:
+                raise Exception("Value refenced by id '{}' not found"
+                                .format(id))
+
         if 'export' in metadata:
             for item in metadata['export']:
                 if isinstance(item, dict):
