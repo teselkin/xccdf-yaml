@@ -112,17 +112,13 @@ class XccdfYaml(object):
                 if 'description' in value_data:
                     value_element.set_description(value_data['description'])
                 else:
-                    if value_type in ['base64', 'base64zip']:
+                    if value_type == 'code':
                         value_element.set_description(value, plaintext=True)
 
-                if value_type == 'base64':
-                    value = base64.b64encode(value.encode()).decode()
-                elif value_type == 'base64zip':
-                    value = base64.b64encode(zlib.compress(value.encode()))\
-                        .decode()
-
-                if value_type in ['base64', 'base64zip']:
+                if value_type == 'code':
                     value_element.set_attr('type', 'string')
+                    value = base64.b64encode(
+                        zlib.compress(value.encode())).decode()
                 else:
                     value_element.set_attr('type', value_type)
 
