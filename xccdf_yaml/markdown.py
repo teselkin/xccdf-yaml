@@ -1,11 +1,15 @@
+from lxml.html import builder
 import lxml.etree as etree
 import markdown
 
 
 class MarkdownHtml(object):
-    def __init__(self, text):
+    def __init__(self, text, plaintext=False):
         self.text = text
-        self.html = etree.HTML(markdown.markdown(self.text.rstrip()))
+        if plaintext:
+            self.html = builder.HTML(builder.BODY(builder.CODE(self.text)))
+        else:
+            self.html = etree.HTML(markdown.markdown(self.text))
         self.ns = 'xhtml'
         self.nsmap = {'xhtml': 'http://www.w3.org/1999/xhtml'}
         self.html = self.set_default_ns(self.html, default_ns=self.ns)

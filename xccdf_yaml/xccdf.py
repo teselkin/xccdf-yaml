@@ -34,10 +34,10 @@ class SetTitleMixin(object):
 
 
 class SetDescriptionMixin(object):
-    def set_description(self, text):
+    def set_description(self, text, plaintext=False):
         if text is not None:
             self.sub_element('description')\
-                .set_text(str(MarkdownHtml(text)))
+                .set_text(str(MarkdownHtml(text, plaintext=plaintext)))
         return self
 
 

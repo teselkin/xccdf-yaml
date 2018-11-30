@@ -107,12 +107,11 @@ class ScriptCheckEngineParser(GenericParser):
         # self.add_shared_file(entrypoint_target,
         #                      content=check_metadata['codeblock'])
 
-        marker = r'```'.encode()
-        codeblock = check_metadata['codeblock'].encode()
+        codeblock = check_metadata['codeblock']
         value = self.benchmark.new_value(
             '{}-codeblock'.format(rule.get_attr('id')))\
-            .set_value(base64.b64encode(codeblock).decode())\
-            .set_description((marker + codeblock + marker).decode())
+            .set_value(base64.b64encode(codeblock.encode()).decode())\
+            .set_description(codeblock, plaintext=True)
         check.check_export(value.get_attr('id'), 'CODEBLOCK')
 
         if 'export' in metadata:
