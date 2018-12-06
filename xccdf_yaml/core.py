@@ -117,8 +117,8 @@ class XccdfYaml(object):
 
                 if value_type == 'code':
                     value_element.set_attr('type', 'string')
-                    value = base64.b64encode(
-                        zlib.compress(value.encode())).decode()
+                    value = textwrap.fill(base64.b64encode(
+                        zlib.compress(value.encode())).decode(), 120)
                 else:
                     value_element.set_attr('type', value_type)
 

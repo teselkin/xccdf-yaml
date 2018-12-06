@@ -2,6 +2,9 @@ from xccdf_yaml.parsers.common import GenericParser
 
 import re
 import base64
+import zlib
+import textwrap
+
 
 
 SHELL_ENTRYPOINT = """#!/bin/bash
@@ -108,9 +111,11 @@ class ScriptCheckEngineParser(GenericParser):
         #                      content=check_metadata['codeblock'])
 
         codeblock = check_metadata['codeblock']
+        compressed_codeblock = textwrap.fill(
+            base64.b64encode(zlib.compress(codeblock.encode())).decode(), 120)
         value = self.benchmark.new_value(
             '{}-codeblock'.format(rule.get_attr('id')))\
-            .set_value(base64.b64encode(codeblock.encode()).decode())\
+            .set_value(compressed_codeblock)\
             .set_description(codeblock, plaintext=True)
         check.check_export(value.get_attr('id'), 'CODEBLOCK')
 
