@@ -320,7 +320,7 @@ class XccdfValue(XmlBase, SetTitleMixin, SetDescriptionMixin):
         self._upper_bound = OrderedDict()
         self.set_attr('id', self.xccdf.id('value', id))
         self.set_title(self.get_attr('id'))
-        self.set_description(self.get_attr('id'))
+        # self.set_description(self.get_attr('id'))
 
     def set_value(self, value, selector=None):
         if selector in self._value:
