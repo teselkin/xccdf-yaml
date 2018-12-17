@@ -343,7 +343,7 @@ class XccdfYaml(object):
         cmd.append(filename)
         if output_file is None:
             output_file = "{}-ds.xml".format(
-                filename.split('.', maxsplit=1)[0])
+                filename.rsplit('.', maxsplit=1)[0])
         cmd.append(output_file)
 
         stderr_fd, stderr_filename = tempfile.mkstemp()
