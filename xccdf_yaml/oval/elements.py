@@ -30,7 +30,7 @@ class OvalDefinitions(XmlBase):
 
     def __init__(self):
         super().__init__('oval_definitions')
-        generator = Generator()
+        generator = OvalGenerator()
         self.append(generator)
 
         self._definitions = OrderedDict()
@@ -137,7 +137,7 @@ class OvalDefinitions(XmlBase):
                 variables.append(x)
 
 
-class Generator(XmlBase):
+class OvalGenerator(XmlBase):
     __elements_order__ = (
         'product_name',
         'product_version',

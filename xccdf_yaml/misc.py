@@ -1,23 +1,18 @@
-def deepmerge(left, right):
-    def copy_of(item):
-        if isinstance(item, dict):
-            result = {}
-            result.update(item)
-        elif isinstance(item, list):
-            result = []
-            result.extend(item)
-        else:
-            result = item
-        return result
+from copy import deepcopy
 
-    if left is None and right is None:
-        return None
+
+def deepmerge(left, right, deep_copy=False):
+    def _deepcopy(obj, deep_copy=False):
+        if deep_copy:
+            return deepcopy(obj)
+        return obj
 
     if left is None:
-        return copy_of(right)
-
-    if right is None:
-        return copy_of(left)
+        if right is None:
+            return None
+        return _deepcopy(right, deep_copy)
+    elif right is None:
+        return _deepcopy(left, deep_copy)
 
     if type(left) != type(right):
         raise Exception("Type mismatch")
@@ -25,15 +20,16 @@ def deepmerge(left, right):
     if isinstance(left, dict):
         result = {}
         for lkey, lvalue in left.items():
-            result[lkey] = deepmerge(lvalue, right.get(lkey))
+            result[lkey] = deepmerge(lvalue, right.get(lkey),
+                                     deep_copy=deep_copy)
         for rkey, rvalue in right.items():
-            result[rkey] = deepmerge(left.get(rkey), rvalue)
+            result[rkey] = deepmerge(left.get(rkey), rvalue,
+                                     deep_copy=deep_copy)
         return result
 
     if isinstance(left, list):
-        result = []
-        result.extend(left)
-        result.extend(right)
+        result = _deepcopy(left, deep_copy)
+        result.extend(_deepcopy(right, deep_copy))
         return result
 
     return right

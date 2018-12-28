@@ -1,5 +1,4 @@
 import os
-import operator
 import html
 import json
 import yaml
@@ -9,18 +8,17 @@ import textwrap
 import tempfile
 import subprocess
 import traceback
-import zlib
-import base64
 
 from lxml.isoschematron import Schematron
 
 from xccdf_yaml.misc import deepmerge, unlist
 from xccdf_yaml.yaml import YamlLoader
-from xccdf_yaml.xccdf import XccdfGenerator
-from xccdf_yaml.oval import OvalDefinitions
+from xccdf_yaml.xccdf.elements import XccdfGenerator
+from xccdf_yaml.oval.elements import OvalDefinitions
 from xccdf_yaml.common import SharedFiles
 
-from xccdf_yaml.parsers import PARSERS
+from xccdf_yaml.oval.parsers import PARSERS
+from xccdf_yaml.xccdf.parsers import XccdfYamlBenchmarkParser
 
 from jsonschema import validate
 from urllib.request import urlopen
@@ -39,6 +37,15 @@ class XccdfYaml(object):
 
     def convert(self, filename=None, output_dir=None, output_file=None,
                 unescape=False, **kwargs):
+        workdir = os.path.dirname(filename)
+        generator = XccdfGenerator('mirantis.com')
+        benchmark = XccdfYamlBenchmarkParser(generator, self.basedir, workdir)
+        benchmark.load(filename)
+        benchmark.export(output_dir=output_dir, output_file=output_file,
+                         unescape=unescape)
+
+    def convert_bak(self, filename=None, output_dir=None, output_file=None,
+                    unescape=False, **kwargs):
         benchmark_source = filename
         data = yaml.load(open(filename), YamlLoader)
         templates = data.get('templates', {})
@@ -77,15 +84,17 @@ class XccdfYaml(object):
                 else:
                     metadata.sub_element(name).set_text(cgi.escape(values))
 
-        profile_info = data.get('profile', {
-            'id': 'default',
-            'title': 'Default Profile',
-        })
+        profiles_data = data.get('profiles', [{
+            'default': {
+                'title': 'Default Profile',
+            }
+        }, ])
 
-        profile = benchmark\
-            .add_profile(profile_info['id'])\
-            .set_title(profile_info.get('title'))\
-            .set_description(profile_info.get('description'))
+        profiles = XccdfYamlProfileParser(benchmark)
+        profiles.load(profiles_data)
+        default_profile = profiles[0]
+        for profile in profiles:
+            benchmark.append_profile(profile)
 
         group_info = data.get('group', {
             'id': 'default',
@@ -93,50 +102,14 @@ class XccdfYaml(object):
         })
 
         group = benchmark\
-            .add_group(group_info.get('id'))\
+            .new_group(group_info.get('id'))\
             .set_title(group_info.get('title'))
 
-        for values in data.get('values', {}):
-            for value_id, value_data in sorted(values.items(),
-                                               key=operator.itemgetter(0)):
-                variables_types[value_id] = value_data['type']
-
-                value_element = benchmark.new_value(value_id)
-
-                value_type = value_data.get('type', 'string')
-                value = value_data.get('value')
-
-                if 'title' in value_data:
-                    value_element.set_title(value_data['title'])
-
-                if 'description' in value_data:
-                    value_element.set_description(value_data['description'])
-                else:
-                    if value_type == 'code':
-                        value_element.set_description(value, plaintext=True)
-
-                if value_type == 'code':
-                    value_element.set_attr('type', 'string')
-                    value = textwrap.fill(base64.b64encode(
-                        zlib.compress(value.encode())).decode(), 120)
-                else:
-                    value_element.set_attr('type', value_type)
-
-                value_element.set('value', value)
-
-                for key in ['operator',]:
-                    if key in value_data:
-                        value_element.set_attr(key, value_data[key])
-
-                for key in ['default', 'lower-bound', 'upper-bound']:
-                    item = value_data.get(key)
-                    if isinstance(item, list):
-                        for x in item:
-                            for selector, value in x.items():
-                                value_element.set(key, value,
-                                                  selector=selector)
-                    elif item is not None:
-                        value_element.set(key, str(item))
+        values_data = data.get('values', [])
+        values = XccdfYamlValueParser(benchmark)
+        values.load(values_data)
+        for value in values:
+            benchmark.append_value(value)
 
         shared_files = SharedFiles(
             basedir=self.basedir,
@@ -171,7 +144,7 @@ class XccdfYaml(object):
                 metadata['external-variables'] = variables_types
             res = parser.parse(id, metadata)
             group.append_rule(res.rule)
-            profile.append_rule(res.rule, selected=True)
+            default_profile.append_rule(res.rule, selected=True)
             if res.has_oval_data:
                 check = res.rule.add_check()
                 if res.has_variable:
@@ -213,6 +186,58 @@ class XccdfYaml(object):
         with open(output_file, 'w') as f:
             f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
             f.write(benchmark_xml_str)
+
+        return output_file
+
+    def tailoring(self, filename=None, output_dir=None, output_file=None,
+                unescape=False, **kwargs):
+
+        data = yaml.load(open(filename), YamlLoader)
+        data = data.get('tailoring')
+
+        tailoring_id = data.get('id') or filename
+
+        os.makedirs(output_dir, exist_ok=True)
+
+        generator = XccdfGenerator('mirantis.com')
+
+        tailoring = generator.tailoring(tailoring_id)
+
+        for profile_id, profile_data in data.get('profiles', {}).items():
+            profile = tailoring\
+                .new_profile('extends_{}'.format(profile_id))\
+                .set_attr('extends', generator.id('profile', profile_id))\
+                .set_title(profile_data.get('title'))\
+                .set_description(profile_data.get('description'))
+
+            selectors = {}
+            for name in ('select', 'set-value', 'set-complex-value',
+                         'refine-value', 'refine-rule'):
+                selectors.setdefault(name, [])\
+                    .extend(profile_data.pop(name, []))
+
+            for selector_name, selectors_data in selectors.items():
+                if selector_name == 'set-value':
+                    for selector_data in selectors_data:
+                        idref, value = next(iter(selector_data.items()))
+                        profile.selector('set-value', idref=idref, value=value)
+
+        tailoring_xml = tailoring.xml()
+        tailoring_xml_str = etree.tostring(tailoring_xml,
+                                           pretty_print=True).decode()
+
+        if unescape:
+            tailoring_xml_str = html.unescape(tailoring_xml_str)
+
+        if output_file is None:
+            output_file = os.path.join(output_dir,
+                                '{}-tailoring.xml'.format(tailoring_id))
+        else:
+            output_file = os.path.join(output_dir, output_file)
+
+        with open(output_file, 'w') as f:
+            f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
+            f.write(tailoring_xml_str)
 
         return output_file
 

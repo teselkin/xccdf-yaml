@@ -1,11 +1,12 @@
 from xccdf_yaml.common import SharedFile
 
+
 class GenericParser(object):
     def __init__(self, benchmark, parsed_args=None, output_dir=None,
                  shared_files=None):
         self.benchmark = benchmark
         self.parsed_args = parsed_args
-        self.output_dir = output_dir or parsed_args.output_dir
+        # self.output_dir = output_dir or parsed_args.output_dir
         self.shared_files = shared_files
 
     @property

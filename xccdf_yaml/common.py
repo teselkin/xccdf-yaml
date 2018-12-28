@@ -109,6 +109,16 @@ class SharedFiles(object):
         self.workdir = workdir
         self._shared_files = {}
 
+    def new(self, filename, content=None):
+        shared_file = SharedFile(basedir=self.basedir, filename=filename)
+
+        if content:
+            shared_file.set_content(content)
+
+        self.append(shared_file)
+
+        return shared_file
+
     def append(self, shared_file):
         if shared_file.filename in self._shared_files:
             if self._shared_files[shared_file.filename] != shared_file:

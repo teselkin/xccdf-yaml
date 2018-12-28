@@ -1,4 +1,5 @@
-from xccdf_yaml.parsers.common import GenericParser
+from xccdf_yaml.oval.parsers.common import ParsedObjects
+from xccdf_yaml.oval.parsers.common import GenericParser
 
 
 class YamlParserSample(GenericParser):

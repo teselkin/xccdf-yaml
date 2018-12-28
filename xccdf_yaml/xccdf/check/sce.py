@@ -1,4 +1,4 @@
-from xccdf_yaml.parsers.common import GenericParser
+from xccdf_yaml.xccdf.check.common import GenericParser
 
 import re
 import base64
@@ -72,10 +72,8 @@ except:
 
 
 class ScriptCheckEngineParser(GenericParser):
-    def parse(self, id, metadata):
-        result = super(ScriptCheckEngineParser, self).parse(id, metadata)
-        rule = result.rule
-
+    def parse(self, rule, metadata):
+        id = rule.get_attr('id')
         check_metadata = metadata['check']
         engine = check_metadata.get('engine', 'shell')
         entrypoint = check_metadata.get('entrypoint')
@@ -86,13 +84,13 @@ class ScriptCheckEngineParser(GenericParser):
         if engine == 'shell':
             if entrypoint is None:
                 entrypoint = 'entrypoint.sh'
-                self.add_shared_file(entrypoint, content=SHELL_ENTRYPOINT)\
+                self.shared_files.new(entrypoint, content=SHELL_ENTRYPOINT)\
                     .set_executable()
             entrypoint_target = '{}.sh'.format(id)
         elif engine == 'python':
             if entrypoint is None:
                 entrypoint = 'entrypoint.py'
-                self.add_shared_file(entrypoint, content=PYTHON_ENTRYPOINT)\
+                self.shared_files.new(entrypoint, content=PYTHON_ENTRYPOINT)\
                     .set_executable()
             entrypoint_target = '{}.py'.format(id)
         else:
@@ -111,8 +109,15 @@ class ScriptCheckEngineParser(GenericParser):
         #                      content=check_metadata['codeblock'])
 
         codeblock = check_metadata['codeblock']
-        compressed_codeblock = textwrap.fill(
-            base64.b64encode(zlib.compress(codeblock.encode())).decode(), 120)
+        if engine == 'python':
+            compressed_codeblock = textwrap.fill(
+                base64.b64encode(zlib.compress(codeblock.encode())).decode(),
+                120
+            )
+        else:
+            compressed_codeblock = textwrap.fill(
+                base64.b64encode(codeblock.encode()).decode(), 120)
+
         value = self.benchmark.new_value(
             '{}-codeblock'.format(rule.get_attr('id')))\
             .set_value(compressed_codeblock)\
@@ -121,13 +126,13 @@ class ScriptCheckEngineParser(GenericParser):
 
         index = 0
         for id in check_metadata.get('include', []):
-            value = self.benchmark.get_value(id)
+            value = self.benchmark.get_value(self.generator.id('value', id))
             if value:
                 index += 1
                 check.check_export(value.get_attr('id'), 'INCLUDE_{}'
                                    .format(str(index).rjust(2, '0')))
             else:
-                raise Exception("Value refenced by id '{}' not found"
+                raise Exception("Value referenced by id '{}' not found"
                                 .format(id))
 
         if 'export' in metadata:
@@ -140,5 +145,3 @@ class ScriptCheckEngineParser(GenericParser):
                     export_name = re.sub(r'[^\w\d]', '_', item).upper()
                     check.check_export(value_id=item,
                                        export_name=export_name)
-
-        return result

@@ -3,10 +3,10 @@ import os
 
 from cliff.command import Command
 from cliff.lister import Lister
-from xccdf_yaml.parsers import PARSERS
+from xccdf_yaml.oval.parsers import PARSERS
 
-from xccdf_yaml.xccdf import XccdfBenchmark
-from xccdf_yaml.oval import OvalDefinitions
+from xccdf_yaml.xccdf.elements import XccdfBenchmarkElement
+from xccdf_yaml.oval.elements import OvalDefinitions
 from xccdf_yaml.core import XccdfYaml
 
 
@@ -26,27 +26,31 @@ class CliConvertYaml(Command):
         parser.add_argument('--datastream', action='store_true')
         parser.add_argument('--datastream-file', default=None)
         parser.add_argument('--skip-valid', action='store_true')
+        parser.add_argument('--tailoring', action='store_true')
         parser.add_argument('filename')
         return parser
 
     def take_action(self, parsed_args):
         xccdf_yaml = XccdfYaml(basedir=parsed_args.basedir)
-        benchmark_xccdf = xccdf_yaml.convert(**vars(parsed_args))
+        if parsed_args.tailoring:
+            xccdf_doc = xccdf_yaml.tailoring(**vars(parsed_args))
+        else:
+            xccdf_doc = xccdf_yaml.convert(**vars(parsed_args))
         if parsed_args.schema:
             xccdf_yaml.validate(
-                filename=benchmark_xccdf,
+                filename=xccdf_doc,
                 schema=parsed_args.schema,
                 skip_valid=parsed_args.skip_valid,
             )
         if parsed_args.schematron:
             xccdf_yaml.schematron(
-                filename=benchmark_xccdf,
+                filename=xccdf_doc,
                 schematron_file=parsed_args.schematron_file)
         if parsed_args.datastream:
-            xccdf_yaml.datastream(filename=benchmark_xccdf,
+            xccdf_yaml.datastream(filename=xccdf_doc,
                                   skip_valid=parsed_args.skip_valid,
                                   output_file=parsed_args.datastream_file)
-        return benchmark_xccdf
+        return xccdf_doc
 
 
 class CliLoadYaml(Command):
@@ -148,15 +152,15 @@ class CliTestXccdf(Command):
         return parser
 
     def take_action(self, parsed_args):
-        benchmark = XccdfBenchmark('test_benchmark')\
+        benchmark = XccdfBenchmarkElement('test_benchmark')\
             .set_title('Title')\
             .set_description('<b>Description</b>')
         benchmark.add_platform('cpe:/o:canonical:ubuntu_linux:16.04')
 
-        profile = benchmark.add_profile('mos')\
+        profile = benchmark.new_profile('mos')\
             .set_title('Mirantis uberprofile')
 
-        group = benchmark.add_group('common')
+        group = benchmark.new_group('common')
         rule = group.add_rule('etc_os_release_does_not_match_Xerus')
         check = rule.add_check()
         check.check_content_ref(href="mos-ubuntu1604-oval.xml",
