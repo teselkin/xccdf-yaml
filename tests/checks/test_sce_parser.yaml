@@ -5,5 +5,7 @@ test_sce_parser:
   rationale: |
     Some **rationale**
   check:
+    include:
+      - test
     codeblock: |
       exit 101

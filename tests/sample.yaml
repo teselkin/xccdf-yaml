@@ -13,6 +13,63 @@ benchmark:
 #  shared-files:
 #  - functions.sh
 
+  values:
+    - test:
+        type: code
+        value: !include-raw 'schema.yaml'
+
+  profiles:
+    - default:
+        abstract: true | false
+        extends: ''
+        status: ''
+        version: ''
+        title: ''
+        description: 'qwe'
+        references:
+          - ''
+        platforms:
+          - ''
+        metadata:
+          - ''
+        selectors:
+          - select:
+              'rule:id':
+                selected: true | false
+                remark:
+                  - ''
+          - set-value:
+              'test': 'value'
+          - set-complex-value:
+              'id':
+                - value
+          - refine-value:
+              'id':
+                remark:
+                  - ''
+                selector:
+          - refine-rule:
+              'id':
+                value: 'value'
+
+    - profile1:
+        abstract: true | false
+        extends: ''
+        status: ''
+        version: ''
+        title: ''
+        description: 'qwe'
+        references:
+          - ''
+        platforms:
+          - ''
+        metadata:
+          - ''
+        selectors:
+          - select:
+              'rule:test_bin_true_1':
+                selected: true
+
 #  values:
 #  - value_2:
 #      type: string
@@ -114,5 +171,19 @@ benchmark:
 #          def main():
 #              print("Hello World")
   - !include-dir 'checks'
-  - !include test-bin-false.yaml
-  - !include test-rule-list.yaml
+#  - !include test-bin-false.yaml
+#  - !include test-rule-list.yaml
+
+tailoring:
+  id: 'sample_xccdf'
+  benchmark: ''
+  status:
+    - status: 'incomplete'
+  version: '0.2'
+  metadata:
+    - ''
+  profiles:
+    - 'qwe':
+        selectors:
+          - set-value:
+             'qwe': 'qwe'

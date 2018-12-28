@@ -132,6 +132,9 @@ class XccdfBenchmarkElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
         self._profiles.setdefault(item.get_attr('id'), item)
         return self
 
+    def get_profile(self, id):
+        return self._profiles.get(id)
+
     def new_profile(self, id):
         return self._profiles.setdefault(id, self.xccdf.profile(id))
 
@@ -264,9 +267,9 @@ class XccdfProfileElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
     def selector(self, selector, idref, **kwargs):
         key = self.SelectorKey(selector, idref)
         if selector == 'select':
-            self._selectors.setdefault(key, kwargs['selected'])
+            self._selectors[key] = kwargs['selected']
         elif selector == 'set-value':
-            self._selectors.setdefault(key, kwargs['value'])
+            self._selectors[key] = kwargs['value']
         return self
 
     def append_rule(self, rule, selected=False):
@@ -334,6 +337,16 @@ class XccdfRuleElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
         self._checks = []
         self._references = []
         self._dc_references = []
+        self._profiles = {}
+
+    @property
+    def profiles(self):
+        return self._profiles.items()
+
+    def add_to_profile(self, name, selected=False):
+        profile = self._profiles.setdefault(name, {})
+        profile['selected'] = selected
+        return self
 
     def add_check(self, **kwargs):
         check = self.xccdf.check(**kwargs)

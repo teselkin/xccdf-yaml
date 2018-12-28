@@ -101,7 +101,7 @@ class XccdfYamlProfileParser(XccdfYamlParser):
         if 'description' in data:
             profile.set_description(data['description'])
 
-        for item in data.get('selectors'):
+        for item in data.get('selectors', []):
             for selector_name, selector_data in item.items():
                 for idref, params in selector_data.items():
                     if selector_name == 'select':
@@ -250,6 +250,16 @@ class XccdfYamlRuleParser(XccdfYamlParser):
                 else:
                     ref.sub_element(element_name).set_text(element_value)
 
+        for profile in data.get('profiles', []):
+            if isinstance(profile, dict):
+                profile_name, profile_data = next(iter(profile.items()))
+                rule.add_to_profile(
+                    name=profile_name,
+                    selected=profile_data.get('selected', False)
+                )
+            else:
+                rule.add_to_profile(name=profile, selected=True)
+
         platforms = list(self.benchmark.platforms)
         if platforms and not data.get('affected', False):
             data['affected'] = platforms
@@ -316,7 +326,11 @@ class XccdfYamlBenchmarkParser(XccdfYamlParser):
             for profile_id, profile_data in profile_map.items():
                 profiles.parse(profile_id, profile_data)
 
-        default_profile = profiles[0]
+        if len(profiles) > 1:
+            default_profile = None
+        else:
+            default_profile = profiles[0]
+
         for profile in profiles:
             self.benchmark.append_profile(profile)
 
@@ -360,7 +374,15 @@ class XccdfYamlBenchmarkParser(XccdfYamlParser):
 
         for rule in rules:
             group.append_rule(rule)
-            default_profile.append_rule(rule)
+            if default_profile:
+                default_profile.append_rule(rule)
+            else:
+                for profile_name, profile_data in rule.profiles:
+                    profile = benchmark.get_profile(
+                        self.generator.id('profile', profile_name))
+                    if profile:
+                        profile.append_rule(
+                            rule, selected=profile_data.get('selected', False))
 
     def export(self, output_dir, output_file=None, unescape=False):
         self.shared_files.export(output_dir)
