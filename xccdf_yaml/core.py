@@ -18,7 +18,8 @@ from xccdf_yaml.oval.elements import OvalDefinitions
 from xccdf_yaml.common import SharedFiles
 
 from xccdf_yaml.oval.parsers import PARSERS
-from xccdf_yaml.xccdf.parsers import XccdfYamlBenchmarkParser
+from xccdf_yaml.xccdf.parsers import XccdfYamlBenchmarkParser,\
+    XccdfYamlTailoringParser
 
 from jsonschema import validate
 from urllib.request import urlopen
@@ -40,206 +41,21 @@ class XccdfYaml(object):
         workdir = os.path.dirname(filename)
         generator = XccdfGenerator('mirantis.com')
         benchmark = XccdfYamlBenchmarkParser(generator, self.basedir, workdir)
-        benchmark.load(filename)
+        data = yaml.load(open(filename), YamlLoader)
+        benchmark.parse(None, data['benchmark'])
         benchmark.export(output_dir=output_dir, output_file=output_file,
                          unescape=unescape)
 
-    def convert_bak(self, filename=None, output_dir=None, output_file=None,
-                    unescape=False, **kwargs):
-        benchmark_source = filename
-        data = yaml.load(open(filename), YamlLoader)
-        templates = data.get('templates', {})
-        data = data.get('benchmark')
-        if data is None:
-            raise Exception('No benchmark section found')
-        variables_types = {}
-
-        benchmark_id = data.get('id') or filename
-
-        source_dir = os.path.dirname(filename)
-        output_dir = os.path.join(output_dir, benchmark_id)
-        os.makedirs(output_dir, exist_ok=True)
-
-        generator = XccdfGenerator('mirantis.com')
-
-        benchmark = generator.benchmark(benchmark_id)\
-            .set_title(data.get('title'))\
-            .set_description(data.get('description'))
-
-        platform = data.get('platform')
-        if platform:
-            if isinstance(platform, list):
-                for platform_str in platform:
-                    benchmark.add_platform(platform_str.rstrip())
-            else:
-                benchmark.add_platform(platform.rstrip())
-
-        dc_metadata = data.get('dc-metadata', {})
-        if dc_metadata:
-            metadata = benchmark.add_dc_metadata()
-            for name, values in dc_metadata.items():
-                if isinstance(values, list):
-                    for value in values:
-                        metadata.sub_element(name).set_text(cgi.escape(value))
-                else:
-                    metadata.sub_element(name).set_text(cgi.escape(values))
-
-        profiles_data = data.get('profiles', [{
-            'default': {
-                'title': 'Default Profile',
-            }
-        }, ])
-
-        profiles = XccdfYamlProfileParser(benchmark)
-        profiles.load(profiles_data)
-        default_profile = profiles[0]
-        for profile in profiles:
-            benchmark.append_profile(profile)
-
-        group_info = data.get('group', {
-            'id': 'default',
-            'title': 'Default Group'
-        })
-
-        group = benchmark\
-            .new_group(group_info.get('id'))\
-            .set_title(group_info.get('title'))
-
-        values_data = data.get('values', [])
-        values = XccdfYamlValueParser(benchmark)
-        values.load(values_data)
-        for value in values:
-            benchmark.append_value(value)
-
-        shared_files = SharedFiles(
-            basedir=self.basedir,
-            workdir=os.path.dirname(os.path.abspath(benchmark_source)))
-
-        oval = OvalDefinitions()
-        oval_ref = '{}-oval.xml'.format(benchmark_id)
-
-        for item in data.get('shared-files', []):
-            if isinstance(item, dict):
-                for filename, source in item.items():
-                    shared_files.from_source(source=source, filename=filename)
-            else:
-                shared_files.from_source(source=item)
-
-        for item in unlist(data.get('rules', [])):
-            id, _metadata = next(iter(item.items()))
-            template = _metadata.get('template')
-            if template:
-                metadata = deepmerge(_metadata,
-                                     templates.get(template))
-            else:
-                metadata = _metadata
-            parser_type = metadata.get('type', 'sce')
-            parser = PARSERS[parser_type](benchmark,
-                                          parsed_args=kwargs,
-                                          output_dir=output_dir,
-                                          shared_files=shared_files)
-            if platform and not metadata.get('affected', False):
-                metadata['affected'] = platform
-            if 'variable' in metadata:
-                metadata['external-variables'] = variables_types
-            res = parser.parse(id, metadata)
-            group.append_rule(res.rule)
-            default_profile.append_rule(res.rule, selected=True)
-            if res.has_oval_data:
-                check = res.rule.add_check()
-                if res.has_variable:
-                    check.check_export(
-                        # FIXME: Fix value id for variable
-                        value_id=metadata['variable'],
-                        export_name=res.variable.get_attr('id'),
-                    )
-                check.check_content_ref(
-                    href=oval_ref,
-                    name=res.definition.get_attr('id'),
-                )
-                self._extend_oval(oval, res)
-
-        shared_files.export(output_dir)
-
-        benchmark_xml = benchmark.xml()
-        benchmark_xml_str = etree.tostring(benchmark_xml,
-                                           pretty_print=True).decode()
-
-        if unescape:
-            benchmark_xml_str = html.unescape(benchmark_xml_str)
-
-        if not oval.is_empty():
-            oval_filename = os.path.join(output_dir, oval_ref)
-            oval_xml = oval.xml()
-            oval_xml_str = etree.tostring(oval_xml,
-                                          pretty_print=True).decode()
-            with open(oval_filename, 'w') as f:
-                f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
-                f.write(oval_xml_str)
-
-        if output_file is None:
-            output_file = os.path.join(output_dir,
-                                '{}-xccdf.xml'.format(benchmark_id))
-        else:
-            output_file = os.path.join(output_dir, output_file)
-
-        with open(output_file, 'w') as f:
-            f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
-            f.write(benchmark_xml_str)
-
-        return output_file
-
     def tailoring(self, filename=None, output_dir=None, output_file=None,
-                unescape=False, **kwargs):
+                  unescape=False, **kwargs):
 
-        data = yaml.load(open(filename), YamlLoader)
-        data = data.get('tailoring')
-
-        tailoring_id = data.get('id') or filename
-
-        os.makedirs(output_dir, exist_ok=True)
-
+        workdir = os.path.dirname(filename)
         generator = XccdfGenerator('mirantis.com')
-
-        tailoring = generator.tailoring(tailoring_id)
-
-        for profile_id, profile_data in data.get('profiles', {}).items():
-            profile = tailoring\
-                .new_profile('extends_{}'.format(profile_id))\
-                .set_attr('extends', generator.id('profile', profile_id))\
-                .set_title(profile_data.get('title'))\
-                .set_description(profile_data.get('description'))
-
-            selectors = {}
-            for name in ('select', 'set-value', 'set-complex-value',
-                         'refine-value', 'refine-rule'):
-                selectors.setdefault(name, [])\
-                    .extend(profile_data.pop(name, []))
-
-            for selector_name, selectors_data in selectors.items():
-                if selector_name == 'set-value':
-                    for selector_data in selectors_data:
-                        idref, value = next(iter(selector_data.items()))
-                        profile.selector('set-value', idref=idref, value=value)
-
-        tailoring_xml = tailoring.xml()
-        tailoring_xml_str = etree.tostring(tailoring_xml,
-                                           pretty_print=True).decode()
-
-        if unescape:
-            tailoring_xml_str = html.unescape(tailoring_xml_str)
-
-        if output_file is None:
-            output_file = os.path.join(output_dir,
-                                '{}-tailoring.xml'.format(tailoring_id))
-        else:
-            output_file = os.path.join(output_dir, output_file)
-
-        with open(output_file, 'w') as f:
-            f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
-            f.write(tailoring_xml_str)
-
-        return output_file
+        parser = XccdfYamlTailoringParser(generator, self.basedir, workdir)
+        data = yaml.load(open(filename), YamlLoader)
+        parser.parse(None, data['tailoring'])
+        parser.export(output_dir=output_dir, output_file=output_file,
+                         unescape=unescape)
 
     def validate(self, filename=None, schema_type='auto', schema='',
                  skip_valid=False, **kwargs):

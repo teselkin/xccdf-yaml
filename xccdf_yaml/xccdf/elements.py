@@ -97,27 +97,31 @@ class XccdfBenchmarkElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
                  status_date=None):
         super().__init__('Benchmark')
         self.xccdf = xccdf
+        self.set_attr('id', self.xccdf.id('benchmark', id))
         self._platforms = set()
         self._profiles = OrderedDict()
         self._groups = OrderedDict()
         self._values = OrderedDict()
         self._dc_metadata = None
-        self.set_attr('id', self.xccdf.id('benchmark', id))
-        self.set_status(status, status_date)
-        self.set_version(version)
+        self._version = version
+        self._status = status
+        self._status_date = status_date
 
     @property
     def platforms(self):
         return self._platforms
 
     def set_status(self, status='draft', status_date=None):
-        element = self.sub_element('status').set_text(status)
+        if status:
+            self._status = status
         if status_date:
-            element.set_attr('date', status_date)
+            self._status_date = status_date
         return self
 
     def set_version(self, version):
-        self.sub_element('version').set_text(version)
+        if version:
+            self._version = version
+        return self
 
     def add_platform(self, name):
         self._platforms.add(name)
@@ -158,6 +162,14 @@ class XccdfBenchmarkElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
         if self._dc_metadata:
             self.append(self._dc_metadata)
 
+        self.remove_elements(name='version')
+        self.sub_element('version').set_text(self._version)
+
+        self.remove_elements(name='status')
+        element = self.sub_element('status').set_text(self._status)
+        if self._status_date:
+            element.set_attr('date', self._status_date)
+
         self.remove_elements(name='Profile')
         for x in self._profiles.values():
             self.append(x)
@@ -183,26 +195,42 @@ class XccdfTailoringElement(XmlBase):
         super().__init__('Tailoring')
         self.xccdf = xccdf
         self.set_attr('id', self.xccdf.id('tailoring', id))
-        self.set_status(status, status_date)
-        self.set_version(version)
         self._profiles = OrderedDict()
+        self._version = version
+        self._status = status
+        self._status_date = status_date
+
+    def append_profile(self, item):
+        self._profiles.setdefault(item.get_attr('id'), item)
+        return self
 
     def add_profile(self, id):
         return self._profiles.setdefault(id, self.xccdf.profile(id))
 
     def set_status(self, status='draft', status_date=None):
-        element = self.sub_element('status').set_text(status)
+        if status:
+            self._status = status
         if status_date:
-            element.set_attr('date', status_date)
+            self._status_date = status_date
         return self
 
     def set_version(self, version):
-        self.sub_element('version').set_text(version)
+        if version:
+            self._version = version
+        return self
 
     def update_elements(self):
         self.remove_elements(name='Profile')
         for x in self._profiles.values():
             self.append(x)
+
+        self.remove_elements(name='version')
+        self.sub_element('version').set_text(self._version)
+
+        self.remove_elements(name='status')
+        element = self.sub_element('status').set_text(self._status)
+        if self._status_date:
+            element.set_attr('date', self._status_date)
 
 
 class XccdfProfileElement(XmlBase, SetTitleMixin, SetDescriptionMixin):

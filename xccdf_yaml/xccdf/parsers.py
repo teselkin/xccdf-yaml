@@ -2,16 +2,15 @@ import base64
 import html
 import os
 import textwrap
-import yaml
 import zlib
 
 import lxml.etree as etree
 
 
+from collections import OrderedDict
 from xccdf_yaml.common import SharedFiles
 from xccdf_yaml.misc import unlist
 from xccdf_yaml.xccdf.elements import XccdfGenerator
-from xccdf_yaml.yaml import YamlLoader
 
 from xccdf_yaml.xccdf.check import PARSERS
 
@@ -19,65 +18,69 @@ from xccdf_yaml.xccdf.check import PARSERS
 
 class XccdfYamlParser(object):
     def __init__(self, generator, benchmark=None):
-        self._items = []
+        self._items = OrderedDict()
         self.generator = generator
         self.benchmark = benchmark
 
     def __len__(self):
         return len(self._items)
 
-    def __getitem__(self, item):
-        return self._items[item]
+    def __getitem__(self, key):
+        if isinstance(key, int):
+            key = list(self._items.keys())[key]
+        return self._items[key]
 
     def __iter__(self):
-        for item in self._items:
+        for item in self._items.values():
             yield item
 
-    # @property
-    # def xccdf(self):
-    #     return self.benchmark.xccdf
+    def append(self, item):
+        item_id = item.get_attr('id')
+        self._items.setdefault(item_id, item)
 
 
 class XccdfYamlProfileParser(XccdfYamlParser):
-    def load(self, data):
-        for item in data:
-            for profile_id, profile_data in item.items():
-                profile = self.generator.profile(id=profile_id)
-                self._load_item(profile, profile_data)
-                self._items.append(profile)
+    def parse(self, id, data):
+        if id is None:
+            id = data['id']
 
-    def _load_item(self, profile, data):
+        profile = self.generator.profile(id)
+        self._parse(profile, data)
+        self.append(profile)
+
+    def _parse(self, profile, data):
         """
-        abstract: true | false
-        extends: ''
-        status: ''
-        version: ''
-        title: ''
-        description: ''
-        references:
-          - ''
-        platforms:
-          - ''
-        metadata:
-          - ''
-        selectors:
-          - select:
-              'id':
-                selected: true | false
-                remark:
-                  - ''
-          - set-value:
-              'id': value
-          - set-complex-value:
-              'id':
-                - value
-          - refine-value:
-              'id':
-                remark:
-                  - ''
-                selector:
-          - refine-rule:
-              'id': value
+        - profile_id:
+            abstract: true | false
+            extends: ''
+            status: ''
+            version: ''
+            title: ''
+            description: ''
+            references:
+              - ''
+            platforms:
+              - ''
+            metadata:
+              - ''
+            selectors:
+              - select:
+                  'id':
+                    selected: true | false
+                    remark:
+                      - ''
+              - set-value:
+                  'id': value
+              - set-complex-value:
+                  'id':
+                    - value
+              - refine-value:
+                  'id':
+                    remark:
+                      - ''
+                    selector:
+              - refine-rule:
+                  'id': value
         """
 
         if 'abstract' in data:
@@ -135,14 +138,15 @@ class XccdfYamlValueParser(XccdfYamlParser):
           high: value2_upper_bound_high
 
     """
-    def load(self, data):
-        for item in data:
-            for value_id, value_data in item.items():
-                value = self.generator.value(id=value_id)
-                self._load_item(value, value_data)
-                self._items.append(value)
+    def parse(self, id, data):
+        if id is None:
+            id = data['id']
 
-    def _load_item(self, value_obj, data):
+        value = self.generator.value(id)
+        self._parse(value, data)
+        self.append(value)
+
+    def _parse(self, value_obj, data):
         value = data.get('value')
         value_type = data.get('type', 'string')
 
@@ -210,15 +214,15 @@ class XccdfYamlRuleParser(XccdfYamlParser):
         self.parsed_args = parsed_args
         self.shared_files = shared_files
 
-    def load(self, data):
-        for item in data:
-            for item_id, item_data in item.items():
-                rule = self.generator.rule(item_id)
-                self._load_item(rule, item_data)
-                self._items.append(rule)
-        return
+    def parse(self, id, data):
+        if id is None:
+            id = data['id']
 
-    def _load_item(self, rule, data):
+        rule = self.generator.rule(id)
+        self._parse(rule, data)
+        self.append(rule)
+
+    def _parse(self, rule, data):
         if 'title' in data:
             rule.set_title(data['title'])
 
@@ -261,35 +265,36 @@ class XccdfYamlRuleParser(XccdfYamlParser):
 
 
 class XccdfYamlBenchmarkParser(XccdfYamlParser):
-    def __init__(self, basedir, workdir, vendor='mirantis.com'):
-        super(XccdfYamlBenchmarkParser, self).__init__(XccdfGenerator(vendor))
+    def __init__(self, generator, basedir, workdir):
+        super(XccdfYamlBenchmarkParser, self).__init__(generator)
         self.basedir = basedir
         self.workdir = workdir
         self.shared_files = SharedFiles(basedir=basedir, workdir=workdir)
         self.filename = None
 
-    def load(self, filename):
-        self.filename = filename
-        data = yaml.load(open(self.filename), YamlLoader)
-        return self._load_item(data['benchmark'])
+    def parse(self, id, data):
+        if id is None:
+            id = data['id']
 
+        self.benchmark = self.generator.benchmark(id)
+        self._parse(self.benchmark, data)
+        return self.benchmark
 
-    def _load_item(self, data):
-        self.benchmark = self.generator.benchmark(data['id'])\
-            .set_title(data.get('title'))\
-            .set_description(data.get('description'))
+    def _parse(self, benchmark, data):
+        benchmark.set_title(data.get('title'))
+        benchmark.set_description(data.get('description'))
 
         platform = data.get('platform')
         if platform:
             if isinstance(platform, list):
                 for platform_str in platform:
-                    self.benchmark.add_platform(platform_str.rstrip())
+                    benchmark.add_platform(platform_str.rstrip())
             else:
-                self.benchmark.add_platform(platform.rstrip())
+                benchmark.add_platform(platform.rstrip())
 
         dc_metadata = data.get('dc-metadata', {})
         if dc_metadata:
-            metadata = self.benchmark.add_dc_metadata()
+            metadata = benchmark.add_dc_metadata()
             for name, values in dc_metadata.items():
                 if isinstance(values, list):
                     for value in values:
@@ -297,17 +302,25 @@ class XccdfYamlBenchmarkParser(XccdfYamlParser):
                 else:
                     metadata.sub_element(name).set_text(html.escape(values))
 
+        # Import profiles
+
+        profiles = XccdfYamlProfileParser(self.generator, benchmark)
+
         profiles_data = data.get('profiles', [{
             'default': {
                 'title': 'Default Profile',
             }
         }, ])
 
-        profiles = XccdfYamlProfileParser(self.generator, self.benchmark)
-        profiles.load(profiles_data)
+        for profile_map in profiles_data:
+            for profile_id, profile_data in profile_map.items():
+                profiles.parse(profile_id, profile_data)
+
         default_profile = profiles[0]
         for profile in profiles:
             self.benchmark.append_profile(profile)
+
+        # Import groups
 
         group_info = data.get('group', {
             'id': 'default',
@@ -318,11 +331,16 @@ class XccdfYamlBenchmarkParser(XccdfYamlParser):
             .new_group(group_info.get('id'))\
             .set_title(group_info.get('title'))
 
-        values_data = data.get('values', [])
-        values = XccdfYamlValueParser(self.generator, self.benchmark)
-        values.load(values_data)
+        # Import values
+
+        values = XccdfYamlValueParser(self.generator, benchmark)
+        for value_map in data.get('values', []):
+            for value_id, value_data in value_map.items():
+                values.parse(value_id, value_data)
         for value in values:
-            self.benchmark.append_value(value)
+            benchmark.append_value(value)
+
+        # Import shared files
 
         for item in data.get('shared-files', []):
             if isinstance(item, dict):
@@ -332,9 +350,13 @@ class XccdfYamlBenchmarkParser(XccdfYamlParser):
             else:
                 self.shared_files.from_source(source=item)
 
-        rules = XccdfYamlRuleParser(self.generator, self.benchmark,
+        # Import rules
+
+        rules = XccdfYamlRuleParser(self.generator, benchmark,
                                     shared_files=self.shared_files)
-        rules.load(unlist(data.get('rules', [])))
+        for rule_map in unlist(data.get('rules', [])):
+            for rule_id, rule_data in rule_map.items():
+                rules.parse(rule_id, rule_data)
 
         for rule in rules:
             group.append_rule(rule)
@@ -363,6 +385,73 @@ class XccdfYamlBenchmarkParser(XccdfYamlParser):
             output_file = os.path.join(
                 output_dir,
                 '{}-xccdf.xml'.format(self.benchmark.get_attr('id'))
+            )
+        else:
+            output_file = os.path.join(output_dir, output_file)
+
+        with open(output_file, 'w') as f:
+            f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
+            f.write(benchmark_xml_str)
+
+        return output_file
+
+
+class XccdfYamlTailoringParser(XccdfYamlParser):
+    def __init__(self, generator, basedir, workdir):
+        super(XccdfYamlTailoringParser, self).__init__(generator)
+        self.basedir = basedir
+        self.workdir = workdir
+        self.shared_files = SharedFiles(basedir=basedir, workdir=workdir)
+        self.filename = None
+
+    def parse(self, id, data):
+        if id is None:
+            id = data['id']
+
+        self.tailoring = self.generator.tailoring(id)
+        self._parse(self.tailoring, data)
+        return self.tailoring
+
+    def _parse(self, tailoring, data):
+        if 'version' in data:
+            tailoring.set_version(data['version'])
+
+        for status in data.get('status', []):
+            tailoring.set_status(status.get('status'), status.get('date'))
+
+        # Import profiles
+
+        profiles = XccdfYamlProfileParser(self.generator, tailoring)
+
+        profiles_data = data.get('profiles', [{
+            'default': {
+                'title': 'Default Profile',
+            }
+        }, ])
+
+        for profile_map in profiles_data:
+            for profile_id, profile_data in profile_map.items():
+                profiles.parse(profile_id, profile_data)
+
+        for profile in profiles:
+            self.tailoring.append_profile(profile)
+
+    def export(self, output_dir, output_file=None, unescape=False):
+        os.makedirs(output_dir, exist_ok=True)
+
+        self.shared_files.export(output_dir)
+
+        benchmark_xml = self.tailoring.xml()
+        benchmark_xml_str = etree.tostring(benchmark_xml,
+                                           pretty_print=True).decode()
+
+        if unescape:
+            benchmark_xml_str = html.unescape(benchmark_xml_str)
+
+        if output_file is None:
+            output_file = os.path.join(
+                output_dir,
+                '{}-xccdf.xml'.format(self.tailoring.get_attr('id'))
             )
         else:
             output_file = os.path.join(output_dir, output_file)
