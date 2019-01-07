@@ -23,7 +23,8 @@ from urllib.request import urlopen
 
 
 class XccdfYaml(object):
-    def __init__(self, basedir=None):
+    def __init__(self, basedir=None, workdir=None):
+        self.workdir = workdir
         self.basedir = basedir
 
     def _extend_oval(self, oval, result):
@@ -35,18 +36,18 @@ class XccdfYaml(object):
 
     def convert(self, filename=None, output_dir=None, output_file=None,
                 unescape=False, **kwargs):
-        workdir = os.path.dirname(filename)
+        basedir = os.path.dirname(filename)
         generator = XccdfGenerator('mirantis.com')
         data = yaml.load(open(filename), YamlLoader)
 
         if 'benchmark' in data:
-            parser = XccdfYamlBenchmarkParser(generator, self.basedir, workdir)
+            parser = XccdfYamlBenchmarkParser(generator, basedir, self.workdir)
             parser.parse(None, data['benchmark'])
             parser.export(output_dir=output_dir, output_file=output_file,
                              unescape=unescape)
 
         if 'tailoring' in data:
-            parser = XccdfYamlTailoringParser(generator, self.basedir, workdir)
+            parser = XccdfYamlTailoringParser(generator, basedir, self.workdir)
             parser.parse(None, data['tailoring'])
             parser.export(output_dir=output_dir, output_file=output_file,
                           unescape=unescape)

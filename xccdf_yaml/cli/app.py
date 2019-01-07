@@ -1,10 +1,25 @@
 import logging
+import os
 import sys
 
 import xccdf_yaml.cli.cli as cli
 
 from cliff.app import App
 from cliff.commandmanager import CommandManager
+from threading import local
+
+
+class AppData(local):
+    def __init__(self):
+        self._ = {
+            'workdir': os.getcwd(),
+        }
+
+    def __getitem__(self, item):
+        return self._[item]
+
+    def __setitem__(self, key, value):
+        self._[key] = value
 
 
 class XCCDF_YAML_Manager(CommandManager):
@@ -33,6 +48,9 @@ class XCCDF_YAML_App(App):
             command_manager=XCCDF_YAML_Manager('xccdf_yaml'),
             deferred_help=True,
         )
+
+    def initialize_app(self, argv):
+        self.appdata = AppData()
 
 
 def main():

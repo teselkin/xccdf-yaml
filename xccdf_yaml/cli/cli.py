@@ -30,7 +30,8 @@ class CliConvertYaml(Command):
         return parser
 
     def take_action(self, parsed_args):
-        xccdf_yaml = XccdfYaml(basedir=parsed_args.basedir)
+        xccdf_yaml = XccdfYaml(basedir=parsed_args.basedir,
+                               workdir=self.app.appdata['workdir'])
         xccdf_doc = xccdf_yaml.convert(**vars(parsed_args))
         if parsed_args.schema:
             xccdf_yaml.validate(
@@ -86,7 +87,8 @@ class CliValidateYaml(Command):
         return parser
 
     def take_action(self, parsed_args):
-        xccdf_yaml = XccdfYaml(basedir=parsed_args.basedir)
+        xccdf_yaml = XccdfYaml(basedir=parsed_args.basedir,
+                               workdir=self.app.appdata['workdir'])
         return xccdf_yaml.validate(**vars(parsed_args))
 
 
@@ -102,7 +104,8 @@ class CliSchematron(Command):
         return parser
 
     def take_action(self, parsed_args):
-        xccdf_yaml = XccdfYaml(basedir=parsed_args.basedir)
+        xccdf_yaml = XccdfYaml(basedir=parsed_args.basedir,
+                               workdir=self.app.appdata['workdir'])
         return xccdf_yaml.schematron(**vars(parsed_args))
 
 
@@ -120,7 +123,8 @@ class CliDatastream(Command):
         return parser
 
     def take_action(self, parsed_args):
-        xccdf_yaml = XccdfYaml(basedir=parsed_args.basedir)
+        xccdf_yaml = XccdfYaml(basedir=parsed_args.basedir,
+                               workdir=self.app.appdata['workdir'])
         if parsed_args.schema:
             xccdf_yaml.validate(filename=parsed_args.filename,
                                 schema=parsed_args.schema,
