@@ -26,16 +26,12 @@ class CliConvertYaml(Command):
         parser.add_argument('--datastream', action='store_true')
         parser.add_argument('--datastream-file', default=None)
         parser.add_argument('--skip-valid', action='store_true')
-        parser.add_argument('--tailoring', action='store_true')
         parser.add_argument('filename')
         return parser
 
     def take_action(self, parsed_args):
         xccdf_yaml = XccdfYaml(basedir=parsed_args.basedir)
-        if parsed_args.tailoring:
-            xccdf_doc = xccdf_yaml.tailoring(**vars(parsed_args))
-        else:
-            xccdf_doc = xccdf_yaml.convert(**vars(parsed_args))
+        xccdf_doc = xccdf_yaml.convert(**vars(parsed_args))
         if parsed_args.schema:
             xccdf_yaml.validate(
                 filename=xccdf_doc,

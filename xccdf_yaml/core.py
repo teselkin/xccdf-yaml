@@ -1,9 +1,7 @@
 import os
-import html
 import json
 import yaml
 import lxml.etree as etree
-import cgi
 import textwrap
 import tempfile
 import subprocess
@@ -11,15 +9,14 @@ import traceback
 
 from lxml.isoschematron import Schematron
 
-from xccdf_yaml.misc import deepmerge, unlist
 from xccdf_yaml.yaml import YamlLoader
 from xccdf_yaml.xccdf.elements import XccdfGenerator
-from xccdf_yaml.oval.elements import OvalDefinitions
-from xccdf_yaml.common import SharedFiles
 
-from xccdf_yaml.oval.parsers import PARSERS
-from xccdf_yaml.xccdf.parsers import XccdfYamlBenchmarkParser,\
+from xccdf_yaml.xccdf.parsers import (
+    XccdfYamlBenchmarkParser,
     XccdfYamlTailoringParser
+)
+
 
 from jsonschema import validate
 from urllib.request import urlopen
@@ -40,22 +37,19 @@ class XccdfYaml(object):
                 unescape=False, **kwargs):
         workdir = os.path.dirname(filename)
         generator = XccdfGenerator('mirantis.com')
-        benchmark = XccdfYamlBenchmarkParser(generator, self.basedir, workdir)
         data = yaml.load(open(filename), YamlLoader)
-        benchmark.parse(None, data['benchmark'])
-        benchmark.export(output_dir=output_dir, output_file=output_file,
-                         unescape=unescape)
 
-    def tailoring(self, filename=None, output_dir=None, output_file=None,
-                  unescape=False, **kwargs):
+        if 'benchmark' in data:
+            parser = XccdfYamlBenchmarkParser(generator, self.basedir, workdir)
+            parser.parse(None, data['benchmark'])
+            parser.export(output_dir=output_dir, output_file=output_file,
+                             unescape=unescape)
 
-        workdir = os.path.dirname(filename)
-        generator = XccdfGenerator('mirantis.com')
-        parser = XccdfYamlTailoringParser(generator, self.basedir, workdir)
-        data = yaml.load(open(filename), YamlLoader)
-        parser.parse(None, data['tailoring'])
-        parser.export(output_dir=output_dir, output_file=output_file,
-                         unescape=unescape)
+        if 'tailoring' in data:
+            parser = XccdfYamlTailoringParser(generator, self.basedir, workdir)
+            parser.parse(None, data['tailoring'])
+            parser.export(output_dir=output_dir, output_file=output_file,
+                          unescape=unescape)
 
     def validate(self, filename=None, schema_type='auto', schema='',
                  skip_valid=False, **kwargs):
