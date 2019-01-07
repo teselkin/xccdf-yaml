@@ -15,6 +15,8 @@ class YamlTemplate(object):
         self.filename = filename
 
     def merge(self, template_name, data):
+        if template_name is None:
+            return deepmerge(self._content, data)
         return deepmerge(self._content[template_name], data)
 
 
@@ -100,8 +102,8 @@ class YamlLoader(yaml.Loader):
     def from_template(self, node):
         params = self.construct_mapping(node, True)
         template_string, template_content = next(iter(params.items()))
-        filename, template_name = ([None, ] +
-                                   template_string.split(':', 1))[-2:]
+        filename, template_name = (template_string.split(':', 1)
+                                   + [None, ])[:2]
         if filename in self._templates:
             template = self._templates[filename]
         else:
