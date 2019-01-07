@@ -79,7 +79,7 @@ class ScriptCheckEngineParser(GenericParser):
         entrypoint = check_metadata.get('entrypoint')
 
         if entrypoint:
-            self.add_shared_file(entrypoint).set_executable()
+            self.shared_files.new(entrypoint).set_executable()
 
         if engine == 'shell':
             if entrypoint is None:
