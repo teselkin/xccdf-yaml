@@ -1,5 +1,6 @@
 .eggs/
 .idea/
+.tox/
 build/
 sources/
 output/
