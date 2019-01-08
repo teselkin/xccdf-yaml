@@ -1,23 +1,26 @@
 import os
-import re
 import shutil
 import stat
 
+from xccdf_yaml.misc import resolve_file_ref
+from xccdf_yaml.appdata import APPDATA
+
 
 class SharedFile(object):
-    def __init__(self, filename, basedir):
-        self.basedir = basedir
-        self.filename = filename
-        self._source = None
+    def __init__(self, name):
+        self._name = name
+        self._sourcepath = None
+        self._sourcefile = None
         self._content = None
         self._executable = False
 
     def __eq__(self, other):
-        if self.filename != other.filename:
+        if self.name != other.name:
             return False
 
-        if self.source and other.source:
-            if os.path.abspath(self.source) != os.path.abspath(other.source):
+        if self.abspath and other.abspath:
+            if os.path.abspath(self.abspath) \
+                    != os.path.abspath(other.abspath):
                 return False
 
         if self.content and other.content:
@@ -27,32 +30,29 @@ class SharedFile(object):
         return True
 
     @classmethod
-    def with_content(cls, filename, content):
-        obj = cls(filename)
-        obj.set_content(content)
-        return obj
+    def new(cls, name, sourcepath=None, sourcefile=None, content=None):
+        obj = cls(name)
+        if sourcepath and sourcefile:
+            obj.set_source(sourcepath, sourcefile)
 
-    @classmethod
-    def from_source(cls, source, basedir=os.getcwd(), filename=None):
-        if filename is None:
-            filename = source
-
-        obj = cls(basedir=basedir, filename=filename)
-        obj.set_source(source)
+        if content:
+            obj.set_content(content)
 
         return obj
 
     @property
-    def basename(self):
-        return os.path.basename(self.filename)
+    def name(self):
+        return self._name
 
     @property
     def content(self):
         return self._content
 
     @property
-    def source(self):
-        return self._source
+    def abspath(self):
+        if self._sourcepath and self._sourcefile:
+            return os.path.abspath(os.path.join(self._sourcepath,
+                                                self._sourcefile))
 
     def set_executable(self, executable=True):
         if executable is True:
@@ -68,37 +68,38 @@ class SharedFile(object):
 
         if self._content != content:
             raise Exception("Attempt to replace content of {}"
-                            .format(self.filename))
+                            .format(self.name))
 
-    def set_source(self, source):
-        if self._source is None:
-            self._source = source
+    def set_source(self, sourcepath, sourcefile):
+        if self._sourcepath is None and self._sourcefile is None:
+            self._sourcepath = sourcepath
+            self._sourcefile = sourcefile
             return
 
-        if os.path.abspath(self._source) != os.path.abspath(source):
-            raise Exception("Attempt to replace source path of {}"
-                            .format(self.filename))
+        p1 = os.path.abspath(
+            os.path.join(self._sourcepath, self._sourcefile))
+        p2 = os.path.abspath(os.path.join(sourcepath, sourcefile))
 
-    def export(self, workdir, output_dir):
-        target = os.path.join(output_dir, self.filename)
+        if p1 != p2:
+            raise Exception("Attempt to replace source path of "
+                            "'{}': '{}' --> '{}'"
+                            .format(self.name, p1, p2))
+
+    def export(self, output_dir=os.getcwd()):
+        target = os.path.join(output_dir, self._name)
         os.makedirs(os.path.dirname(target), exist_ok=True)
 
         if self._content:
             with open(target, 'w') as f:
                 f.write(self._content)
         else:
-            if self.source:
-                if re.match(r'\.+\/', self.source):
-                    source = os.path.join(workdir, self.source)
+            sourcefile = self.abspath
+            if sourcefile:
+                if os.path.exists(sourcefile):
+                    shutil.copyfile(sourcefile, target)
                 else:
-                    source = os.path.join(self.basedir, self.source)
-            else:
-                source = os.path.join(workdir, self.filename)
-
-            if os.path.exists(source):
-                shutil.copyfile(source, target)
-            else:
-                raise Exception("Shared file '{}' not found".format(source))
+                    raise Exception("Shared file '{}' not found"
+                                    .format(sourcefile))
 
         if os.path.exists(target):
             if self._executable:
@@ -107,33 +108,47 @@ class SharedFile(object):
 
 
 class SharedFiles(object):
-    def __init__(self, workdir, basedir=os.getcwd()):
-        self.basedir = basedir
-        self.workdir = workdir
+    def __init__(self, workdir=None, basedir=None):
+        self.basedir = basedir or APPDATA['basedir']
+        self.workdir = workdir or APPDATA['workdir']
         self._shared_files = {}
 
+    def __getitem__(self, item):
+        return self._shared_files[item]
+
+    def new(self, name, sourceref=None, content=None):
+        shared_file = SharedFile(name)
+
+        if sourceref:
+            sourcepath, sourcefile = resolve_file_ref(sourceref,
+                                                      basedir=self.basedir,
+                                                      workdir=self.workdir)
+            shared_file.set_source(sourcepath=sourcepath,
+                                   sourcefile=sourcefile)
+
+        if content:
+            shared_file.set_content(content)
+
+        self.append(shared_file)
+
+        return shared_file
+
     def append(self, shared_file):
-        if shared_file.filename in self._shared_files:
-            if self._shared_files[shared_file.filename] != shared_file:
+        if shared_file.name in self._shared_files:
+            if self._shared_files[shared_file.name] != shared_file:
                 raise Exception("Shared file {} already exists"
                                 .format(shared_file.filename))
 
-        self._shared_files[shared_file.filename] = shared_file
-        return shared_file
-
-    def from_source(self, source, filename=None):
-        if filename is None:
-            filename = source
-
-        shared_file = SharedFile.from_source(
-            basedir=self.basedir, source=source, filename=filename)
-        self.append(shared_file)
-
+        self._shared_files[shared_file.name] = shared_file
         return shared_file
 
     def setdefault(self, shared_file):
         return self._shared_files.setdefault(shared_file.filename, shared_file)
 
     def export(self, output_dir):
+        if not os.path.isabs(output_dir):
+            output_dir = os.path.abspath(
+                os.path.join(self.workdir, output_dir))
+
         for shared_file in self._shared_files.values():
-            shared_file.export(workdir=self.workdir, output_dir=output_dir)
+            shared_file.export(output_dir)

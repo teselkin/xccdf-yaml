@@ -3,8 +3,21 @@ import re
 import yaml
 
 from io import StringIO
+from xccdf_yaml.misc import deepmerge, resolve_file_ref
 
 re_include = re.compile(r'^#%include%\s*(.*?)\s*$', re.MULTILINE)
+
+
+class YamlTemplate(object):
+    def __init__(self, filename):
+        with open(filename) as f:
+            self._content = yaml.load(f, YamlLoader)
+        self.filename = filename
+
+    def merge(self, template_name, data):
+        if template_name is None:
+            return deepmerge(self._content, data)
+        return deepmerge(self._content[template_name], data)
 
 
 class YamlLoader(yaml.Loader):
@@ -14,6 +27,7 @@ class YamlLoader(yaml.Loader):
         except AttributeError:
             self._root = os.path.curdir
         super().__init__(self._load(stream.name))
+        self._templates = {}
 
     def _load(self, filename):
         tree = self._build_tree(filename)
@@ -85,7 +99,21 @@ class YamlLoader(yaml.Loader):
         with open(filename, 'r') as f:
             return f.read()
 
+    def merge_template(self, node):
+        data = self.construct_mapping(node, True)
+
+        filename = data['filename']
+        if filename in self._templates:
+            template = self._templates[filename]
+        else:
+            path, filename = resolve_file_ref(filename)
+            template = YamlTemplate(os.path.join(path, filename))
+            self._templates[filename] = template
+
+        return template.merge(data.get('key'), data['content'])
+
 
 YamlLoader.add_constructor('!include', YamlLoader.include)
 YamlLoader.add_constructor('!include-dir', YamlLoader.include_dir)
 YamlLoader.add_constructor('!include-raw', YamlLoader.include_raw)
+YamlLoader.add_constructor('!merge', YamlLoader.merge_template)

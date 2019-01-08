@@ -3,10 +3,11 @@ import os
 
 from cliff.command import Command
 from cliff.lister import Lister
-from xccdf_yaml.parsers import PARSERS
+from xccdf_yaml.oval.parsers import PARSERS
 
-from xccdf_yaml.xccdf import XccdfBenchmark
-from xccdf_yaml.oval import OvalDefinitions
+from xccdf_yaml.appdata import APPDATA
+from xccdf_yaml.xccdf.elements import XccdfBenchmarkElement
+from xccdf_yaml.oval.elements import OvalDefinitions
 from xccdf_yaml.core import XccdfYaml
 
 
@@ -15,7 +16,6 @@ class CliConvertYaml(Command):
 
     def get_parser(self, prog_name):
         parser = super().get_parser(prog_name)
-        parser.add_argument('--basedir', default=os.getcwd())
         parser.add_argument('--no-unescape', action='store_false',
                             dest='unescape')
         parser.add_argument('--output-dir', default='output')
@@ -30,23 +30,24 @@ class CliConvertYaml(Command):
         return parser
 
     def take_action(self, parsed_args):
-        xccdf_yaml = XccdfYaml(basedir=parsed_args.basedir)
-        benchmark_xccdf = xccdf_yaml.convert(**vars(parsed_args))
+        APPDATA['basedir'] = os.path.dirname(parsed_args.filename)
+        xccdf_yaml = XccdfYaml()
+        xccdf_doc = xccdf_yaml.convert(**vars(parsed_args))
         if parsed_args.schema:
             xccdf_yaml.validate(
-                filename=benchmark_xccdf,
+                filename=xccdf_doc,
                 schema=parsed_args.schema,
                 skip_valid=parsed_args.skip_valid,
             )
         if parsed_args.schematron:
             xccdf_yaml.schematron(
-                filename=benchmark_xccdf,
+                filename=xccdf_doc,
                 schematron_file=parsed_args.schematron_file)
         if parsed_args.datastream:
-            xccdf_yaml.datastream(filename=benchmark_xccdf,
+            xccdf_yaml.datastream(filename=xccdf_doc,
                                   skip_valid=parsed_args.skip_valid,
                                   output_file=parsed_args.datastream_file)
-        return benchmark_xccdf
+        return xccdf_doc
 
 
 class CliLoadYaml(Command):
@@ -54,7 +55,6 @@ class CliLoadYaml(Command):
 
     def get_parser(self, prog_name):
         parser = super().get_parser(prog_name)
-        parser.add_argument('--basedir', default=os.getcwd())
         parser.add_argument('--format', dest='format', action='store',
                             choices=['json', 'yaml'], default='json')
         parser.add_argument('--indent', type=int, default=2)
@@ -64,7 +64,8 @@ class CliLoadYaml(Command):
         return parser
 
     def take_action(self, parsed_args):
-        xccdf_yaml = XccdfYaml(basedir=parsed_args.basedir)
+        APPDATA['basedir'] = os.path.dirname(parsed_args.filename)
+        xccdf_yaml = XccdfYaml()
         return xccdf_yaml.load(**vars(parsed_args))
 
 
@@ -73,7 +74,6 @@ class CliValidateYaml(Command):
 
     def get_parser(self, prog_name):
         parser = super().get_parser(prog_name)
-        parser.add_argument('--basedir', default=os.getcwd())
         parser.add_argument('--schema', default=None)
         parser.add_argument('--schema-type', dest='schema_type',
                             action='store',
@@ -86,7 +86,9 @@ class CliValidateYaml(Command):
         return parser
 
     def take_action(self, parsed_args):
-        xccdf_yaml = XccdfYaml(basedir=parsed_args.basedir)
+        APPDATA['basedir'] = os.path.dirname(parsed_args.filename)
+        xccdf_yaml = XccdfYaml(basedir=self.app.appdata['basedir'],
+                               workdir=self.app.appdata['workdir'])
         return xccdf_yaml.validate(**vars(parsed_args))
 
 
@@ -95,14 +97,16 @@ class CliSchematron(Command):
 
     def get_parser(self, prog_name):
         parser = super().get_parser(prog_name)
-        parser.add_argument('--basedir', default=os.getcwd())
         parser.add_argument('--schematron-file', default=None)
         parser.add_argument('--skip-valid', action='store_true')
         parser.add_argument('filename')
         return parser
 
     def take_action(self, parsed_args):
-        xccdf_yaml = XccdfYaml(basedir=parsed_args.basedir)
+        APPDATA['basedir'] = os.path.dirname(parsed_args.filename)
+        if parsed_args.workdir:
+            self.app.appdata['workdir'] = parsed_args.workdir
+        xccdf_yaml = XccdfYaml()
         return xccdf_yaml.schematron(**vars(parsed_args))
 
 
@@ -111,7 +115,6 @@ class CliDatastream(Command):
 
     def get_parser(self, prog_name):
         parser = super().get_parser(prog_name)
-        parser.add_argument('--basedir', default=os.getcwd())
         parser.add_argument('--schema', default='None')
         parser.add_argument('--schematron', action='store_true')
         parser.add_argument('--schematron-file', default=None)
@@ -120,7 +123,9 @@ class CliDatastream(Command):
         return parser
 
     def take_action(self, parsed_args):
-        xccdf_yaml = XccdfYaml(basedir=parsed_args.basedir)
+        APPDATA['basedir'] = os.path.dirname(parsed_args.filename)
+        xccdf_yaml = XccdfYaml(basedir=self.app.appdata['basedir'],
+                               workdir=self.app.appdata['workdir'])
         if parsed_args.schema:
             xccdf_yaml.validate(filename=parsed_args.filename,
                                 schema=parsed_args.schema,
@@ -148,15 +153,15 @@ class CliTestXccdf(Command):
         return parser
 
     def take_action(self, parsed_args):
-        benchmark = XccdfBenchmark('test_benchmark')\
+        benchmark = XccdfBenchmarkElement('test_benchmark')\
             .set_title('Title')\
             .set_description('<b>Description</b>')
         benchmark.add_platform('cpe:/o:canonical:ubuntu_linux:16.04')
 
-        profile = benchmark.add_profile('mos')\
+        profile = benchmark.new_profile('mos')\
             .set_title('Mirantis uberprofile')
 
-        group = benchmark.add_group('common')
+        group = benchmark.new_group('common')
         rule = group.add_rule('etc_os_release_does_not_match_Xerus')
         check = rule.add_check()
         check.check_content_ref(href="mos-ubuntu1604-oval.xml",

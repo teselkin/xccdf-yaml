@@ -1,12 +1,12 @@
-from xccdf_yaml.common import SharedFile
+from xccdf_yaml.common import SharedFiles
 
 
 class GenericParser(object):
-    def __init__(self, benchmark, parsed_args=None, output_dir=None,
+    def __init__(self, generator, benchmark, parsed_args=None,
                  shared_files=None):
+        self.generator = generator
         self.benchmark = benchmark
         self.parsed_args = parsed_args
-        self.output_dir = output_dir or parsed_args.output_dir
         self.shared_files = shared_files
 
     @property
@@ -22,16 +22,7 @@ class GenericParser(object):
         return ''
 
     def add_shared_file(self, filename, content=None):
-        shared_file = self.shared_files.setdefault(
-            SharedFile(basedir=self.shared_files.basedir,
-                       filename=filename))
-
-        if content:
-            shared_file.set_content(content)
-
-        self.shared_files.append(shared_file)
-
-        return shared_file
+        return self.shared_files.new(name=filename, content=content)
 
     def parse(self, id, metadata):
         result = ParsedObjects(self.xccdf)
@@ -76,7 +67,7 @@ class ParsedObjects(object):
         self.objects = []
         self.states = []
         self.tests = []
-        self._shared_files = {}
+        self._shared_files = SharedFiles()
         self._entrypoints = set()
         self.variable = None
 
@@ -85,13 +76,7 @@ class ParsedObjects(object):
         return self.rule
 
     def add_shared_file(self, filename, content=None):
-        shared_file = self._shared_files.setdefault(
-            filename, SharedFile(filename))
-
-        if content:
-            shared_file.set_content(content)
-
-        return shared_file
+        return self._shared_files.new(name=filename, content=content)
 
     def add_entrypoint(self, filename):
         self._entrypoints.add(filename)
