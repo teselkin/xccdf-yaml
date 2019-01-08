@@ -9,6 +9,7 @@ from xccdf_yaml.oval import Criterion
 # from xccdf_yaml.oval import Metadata
 from xccdf_yaml.cpe import get_affected_from_cpe
 
+
 class FileParser(GenericParser):
     __ns__ = 'oval-def-unix'
 
@@ -16,10 +17,10 @@ class FileParser(GenericParser):
     def __parse_mode__(mode):
         mode = '{:0>4}'.format(mode)
         bit_names = [
-        'suid', 'sgid', 'sticky',
-        'uread', 'uwrite', 'uexec',
-        'gread', 'gwrite', 'gexec',
-        'oread', 'owrite', 'oexec',
+            'suid', 'sgid', 'sticky',
+            'uread', 'uwrite', 'uexec',
+            'gread', 'gwrite', 'gexec',
+            'oread', 'owrite', 'oexec',
         ]
         bit_string = ''.join([
             '{0:03b}'.format(int(i)) for i in str(mode)])
@@ -42,7 +43,6 @@ class FileParser(GenericParser):
         else:
             raise ValueError('filename must be string or list')
 
-
         affected = metadata.get('affected', 'Ubuntu 1604')
 
         for idx, filename in enumerate(filenames):
@@ -56,7 +56,6 @@ class FileParser(GenericParser):
 
             res.objects.append(obj)
 
-
             # states and tests
             if 'mode' in metadata:
                 mode = str(metadata['mode'])
@@ -65,6 +64,7 @@ class FileParser(GenericParser):
                 if not str(mode).isdecimal():
                     raise ValueError("mode must be decimal")
                 modes = self.__parse_mode__(mode)
+
                 # State
                 state = OvalState('oval:{}_mode_{}:ste:1'.format(id, idx),
                                   'file_state', ns=self.__ns__)
@@ -96,7 +96,8 @@ class FileParser(GenericParser):
                 uid = str(metadata['uid'])
                 if int(uid) < 0 or not uid.isdecimal():
                     raise ValueError('UID must be positive decimal')
-                tid = 'oval:{}_uid:tst:1'.format(uid)
+                # tid = 'oval:{}_uid:tst:1'.format(uid)
+
                 # State
                 state = OvalState('oval:{}_uid_{}:ste:1'.format(id, idx),
                                   'file_state', ns=self.__ns__)
@@ -156,7 +157,6 @@ class FileParser(GenericParser):
                 metadata.set_affected('unix', get_affected_from_cpe(affect))
         else:
             metadata.set_affected('unix', get_affected_from_cpe(affected))
-
 
         criteria = definition.add_criteria()
         for test in res.tests:

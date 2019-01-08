@@ -6,7 +6,6 @@ import zlib
 import textwrap
 
 
-
 SHELL_ENTRYPOINT = """#!/bin/bash
 set -o errtrace
 set -o nounset
@@ -47,7 +46,7 @@ fi
 exit_with PASS
 """
 
-PYTHON_ENTRYPOINT="""#!/usr/bin/python
+PYTHON_ENTRYPOINT = """#!/usr/bin/python
 import os
 import sys
 import traceback
@@ -63,7 +62,8 @@ def exit_fail():
 
 try:
     filename = os.environ.get('XCCDF_VALUE_ENTRYPOINT')
-    exec(compile(open(filename, "rb").read(), filename, 'exec'), globals(), locals())
+    exec(compile(open(filename, "rb").read(), filename, 'exec'),
+         globals(), locals())
     exit_pass()
 except:
     traceback.print_exc(file=sys.stdout)
@@ -88,13 +88,13 @@ class ScriptCheckEngineParser(GenericParser):
                 entrypoint = 'entrypoint.sh'
                 self.add_shared_file(entrypoint, content=SHELL_ENTRYPOINT)\
                     .set_executable()
-            entrypoint_target = '{}.sh'.format(id)
+            # entrypoint_target = '{}.sh'.format(id)
         elif engine == 'python':
             if entrypoint is None:
                 entrypoint = 'entrypoint.py'
                 self.add_shared_file(entrypoint, content=PYTHON_ENTRYPOINT)\
                     .set_executable()
-            entrypoint_target = '{}.py'.format(id)
+            # entrypoint_target = '{}.py'.format(id)
         else:
             raise Exception("Unsupported engine {}".format(engine))
 

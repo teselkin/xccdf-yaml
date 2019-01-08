@@ -1,5 +1,5 @@
 from xccdf_yaml.parsers.common import GenericParser
-from xccdf_yaml.parsers.common import ParsedObjects
+# from xccdf_yaml.parsers.common import ParsedObjects
 
 import re
 
@@ -110,8 +110,8 @@ class CmdExecParser(GenericParser):
         else:
             raise Exception('No script or cmdline found')
 
-        self.add_shared_file(filename,
-                            content='\n'.join(content)).set_executable()
+        self.add_shared_file(
+            filename, content='\n'.join(content)).set_executable()
 
         check = rule.add_check(system_ns='sce')\
             .check_import(import_name='stdout')\

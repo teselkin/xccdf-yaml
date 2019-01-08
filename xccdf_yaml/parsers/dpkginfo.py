@@ -9,6 +9,7 @@ from xccdf_yaml.oval import Criterion
 # from xccdf_yaml.oval import Metadata
 from xccdf_yaml.cpe import get_affected_from_cpe
 
+
 class DpkginfoParser(GenericParser):
     __id__ = 'pkg'
     __ns__ = 'oval-def-linux'
@@ -41,7 +42,7 @@ class DpkginfoParser(GenericParser):
                 version = metadata['version']
                 operation = metadata.get('match')
                 if ':' not in version:
-                    version = '0:{}'.format(version) # we need to have evr
+                    version = '0:{}'.format(version)  # we need to have evr
                 if operation == 'eq':
                     operation = 'equal'
                 elif operation == 'ge':

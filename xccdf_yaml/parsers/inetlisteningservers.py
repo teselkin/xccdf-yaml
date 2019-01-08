@@ -6,9 +6,10 @@ from xccdf_yaml.oval import OvalObject
 from xccdf_yaml.oval import OvalState
 from xccdf_yaml.oval import OvalTest
 from xccdf_yaml.oval import Criterion
-from xccdf_yaml.oval import Metadata
+# from xccdf_yaml.oval import Metadata
 from xccdf_yaml.oval import ExternalVariable
 from xccdf_yaml.cpe import get_affected_from_cpe
+
 
 class InetlisteningserversParser(GenericParser):
     """Return inetlisteningservers objects.
@@ -28,8 +29,8 @@ class InetlisteningserversParser(GenericParser):
         if 'description' in metadata:
             rule.set_description(metadata['title'])
 
-        if not 'port' in metadata:
-            if not 'local_full_address' in metadata:
+        if 'port' not in metadata:
+            if 'local_full_address' not in metadata:
                 raise KeyError('port or local_full_address must be set')
 
         protocol = metadata.get('protocol', 'tcp')
@@ -42,8 +43,7 @@ class InetlisteningserversParser(GenericParser):
 
         listen = metadata.get('listen', True)
         program = metadata.get('program')
-        uid = metadata.get('uid')
-
+        # uid = metadata.get('uid')
 
         variable = metadata.get('variable')
         oval_var_id = 'oval:{}:var:1'.format(variable)
@@ -52,7 +52,7 @@ class InetlisteningserversParser(GenericParser):
 
         affected = metadata.get('affected', 'Ubuntu 1604')
 
-        any_addr_re = '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$'
+        any_addr_re = r'^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$'
 
         elements_order = (
             'protocol',
@@ -63,13 +63,12 @@ class InetlisteningserversParser(GenericParser):
             'user_id',
         )
 
-
         # Objects
-        if listen \
-            and address not in ['all', 'any', '0.0.0.0', '*'] \
-            and not variable:
-            any_listen_obj = OvalObject('oval:{}_listen_any:obj:1'.format(id),
-                             'inetlisteningservers_object', ns=self.__ns__)
+        if listen and address not in ['all', 'any', '0.0.0.0', '*'] \
+                and not variable:
+            any_listen_obj = OvalObject(
+                'oval:{}_listen_any:obj:1'.format(id),
+                'inetlisteningservers_object', ns=self.__ns__)
             any_listen_obj.__elements_order__ = elements_order
 
             any_listen_obj.sub_element('protocol')\
@@ -132,11 +131,11 @@ class InetlisteningserversParser(GenericParser):
         res.states.append(state)
 
         # Tests
-        if listen \
-            and address not in ['all', 'any', '0.0.0.0', '*'] \
-            and not variable:
-            listen_any_test = OvalTest('oval:{}_listen_any:tst:1'.format(id),
-                            'inetlisteningservers_test', ns=self.__ns__)
+        if listen and address not in ['all', 'any', '0.0.0.0', '*'] \
+                and not variable:
+            listen_any_test = OvalTest(
+                'oval:{}_listen_any:tst:1'.format(id),
+                'inetlisteningservers_test', ns=self.__ns__)
             listen_any_test.set_attr('check', 'none exist')
             listen_any_test.add_object(any_listen_obj)
             res.tests.append(listen_any_test)
@@ -158,7 +157,6 @@ class InetlisteningserversParser(GenericParser):
             var_type = metadata['external-variables'][variable]
             res.variable = ExternalVariable(oval_var_id, var_type)
 
-
         # Definition
         definition = Definition('oval:{}:def:1'.format(id))
 
@@ -171,9 +169,8 @@ class InetlisteningserversParser(GenericParser):
         else:
             metadata.set_affected('unix', get_affected_from_cpe(affected))
 
-        if listen \
-            and address not in ['all', 'any', '0.0.0.0', '*'] \
-            and not variable:
+        if listen and address not in ['all', 'any', '0.0.0.0', '*'] \
+                and not variable:
             operator = 'OR'
         else:
             operator = 'AND'

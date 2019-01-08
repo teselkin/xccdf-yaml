@@ -1,4 +1,4 @@
-import logging
+# import logging
 import sys
 
 import xccdf_yaml.cli.cli as cli

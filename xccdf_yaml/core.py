@@ -49,7 +49,7 @@ class XccdfYaml(object):
 
         benchmark_id = data.get('id') or filename
 
-        source_dir = os.path.dirname(filename)
+        # source_dir = os.path.dirname(filename)
         output_dir = os.path.join(output_dir, benchmark_id)
         os.makedirs(output_dir, exist_ok=True)
 
@@ -124,7 +124,7 @@ class XccdfYaml(object):
 
                 value_element.set('value', value)
 
-                for key in ['operator',]:
+                for key in ['operator', ]:
                     if key in value_data:
                         value_element.set_attr(key, value_data[key])
 
@@ -205,8 +205,8 @@ class XccdfYaml(object):
                 f.write(oval_xml_str)
 
         if output_file is None:
-            output_file = os.path.join(output_dir,
-                                '{}-xccdf.xml'.format(benchmark_id))
+            output_file = os.path.join(
+                output_dir, '{}-xccdf.xml'.format(benchmark_id))
         else:
             output_file = os.path.join(output_dir, output_file)
 
@@ -239,7 +239,7 @@ class XccdfYaml(object):
             try:
                 data = yaml.load(open(filename), YamlLoader)
                 validate(data, schema)
-            except:
+            except: # noqa
                 traceback.print_exc()
                 if not skip_valid:
                     raise

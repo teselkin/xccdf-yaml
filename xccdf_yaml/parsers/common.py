@@ -1,5 +1,6 @@
 from xccdf_yaml.common import SharedFile
 
+
 class GenericParser(object):
     def __init__(self, benchmark, parsed_args=None, output_dir=None,
                  shared_files=None):

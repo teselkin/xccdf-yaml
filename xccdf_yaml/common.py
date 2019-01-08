@@ -55,7 +55,10 @@ class SharedFile(object):
         return self._source
 
     def set_executable(self, executable=True):
-        self._executable = executable == True
+        if executable is True:
+            self._executable = True
+        else:
+            self._executable = False
 
     def set_content(self, content):
         content = content.strip()

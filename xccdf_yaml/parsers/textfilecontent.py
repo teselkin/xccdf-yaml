@@ -12,6 +12,7 @@ from xccdf_yaml.cpe import get_affected_from_cpe
 
 import os
 
+
 class TextfilecontentParser(GenericParser):
     __id__ = 'pattern_match'
     __ns__ = 'oval-def-indep'
@@ -26,7 +27,7 @@ class TextfilecontentParser(GenericParser):
         if 'description' in metadata:
             rule.set_description(metadata['title'])
 
-        if not 'filename' in metadata:
+        if 'filename' not in metadata:
             raise KeyError('filename must be set')
 
         if 'pattern' not in metadata and 'variable' not in metadata:
