@@ -45,7 +45,7 @@ def unlist(seq):
         yield seq
 
 
-def resolve_file_path(filename, workdir=None, basedir=None):
+def resolve_file_ref(filename, workdir=None, basedir=None):
     match = re.match(r'<(.*)>', filename)
     if match:
         return workdir, match.group(1)

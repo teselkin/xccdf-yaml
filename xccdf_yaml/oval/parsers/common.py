@@ -24,7 +24,7 @@ class GenericParser(object):
     def add_shared_file(self, filename, content=None):
         shared_file = self.shared_files.setdefault(
             SharedFile(path=self.shared_files.basedir,
-                       filename=filename))
+                       name=filename))
 
         if content:
             shared_file.set_content(content)

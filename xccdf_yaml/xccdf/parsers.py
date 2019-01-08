@@ -358,11 +358,10 @@ class XccdfYamlBenchmarkParser(XccdfYamlParser):
 
         for item in data.get('shared-files', []):
             if isinstance(item, dict):
-                for filename, source in item.items():
-                    self.shared_files.from_source(source=source,
-                                                  filename=filename)
+                for filename, sourceref in item.items():
+                    self.shared_files.new(name=filename, sourceref=sourceref)
             else:
-                self.shared_files.from_source(source=item)
+                self.shared_files.new(name=item, sourceref=item)
 
         # Import rules
 
