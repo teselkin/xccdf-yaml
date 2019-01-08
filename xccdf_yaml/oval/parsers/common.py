@@ -23,7 +23,7 @@ class GenericParser(object):
 
     def add_shared_file(self, filename, content=None):
         shared_file = self.shared_files.setdefault(
-            SharedFile(basedir=self.shared_files.basedir,
+            SharedFile(path=self.shared_files.basedir,
                        filename=filename))
 
         if content:

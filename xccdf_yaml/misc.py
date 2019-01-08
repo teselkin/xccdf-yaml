@@ -1,4 +1,5 @@
 from copy import deepcopy
+import re
 
 
 def deepmerge(left, right, deep_copy=False):
@@ -42,3 +43,11 @@ def unlist(seq):
                 yield y
     else:
         yield seq
+
+
+def resolve_file_path(filename, workdir=None, basedir=None):
+    match = re.match(r'<(.*)>', filename)
+    if match:
+        return workdir, match.group(1)
+    else:
+        return basedir, filename

@@ -3,10 +3,12 @@ import re
 import shutil
 import stat
 
+from xccdf_yaml.misc import resolve_file_path
+
 
 class SharedFile(object):
-    def __init__(self, filename, basedir):
-        self.basedir = basedir
+    def __init__(self, filename, path):
+        self.path = path
         self.filename = filename
         self._source = None
         self._content = None
@@ -33,11 +35,11 @@ class SharedFile(object):
         return obj
 
     @classmethod
-    def from_source(cls, source, basedir=os.getcwd(), filename=None):
+    def from_source(cls, source, path=os.getcwd(), filename=None):
         if filename is None:
             filename = source
 
-        obj = cls(basedir=basedir, filename=filename)
+        obj = cls(path=path, filename=filename)
         obj.set_source(source)
 
         return obj
@@ -88,7 +90,7 @@ class SharedFile(object):
                 if re.match(r'\.+\/', self.source):
                     source = os.path.join(workdir, self.source)
                 else:
-                    source = os.path.join(self.basedir, self.source)
+                    source = os.path.join(self.path, self.source)
             else:
                 source = os.path.join(workdir, self.filename)
 
@@ -104,13 +106,15 @@ class SharedFile(object):
 
 
 class SharedFiles(object):
-    def __init__(self, workdir, basedir=os.getcwd()):
+    def __init__(self, workdir, basedir):
         self.basedir = basedir
         self.workdir = workdir
         self._shared_files = {}
 
     def new(self, filename, content=None):
-        shared_file = SharedFile(basedir=self.basedir, filename=filename)
+        path, filename = resolve_file_path(filename, workdir=self.workdir,
+                                           basedir=self.basedir)
+        shared_file = SharedFile(path=path, filename=filename)
 
         if content:
             shared_file.set_content(content)
@@ -132,8 +136,10 @@ class SharedFiles(object):
         if filename is None:
             filename = source
 
+        path, filename = resolve_file_path(filename, workdir=self.workdir,
+                                           basedir=self.basedir)
         shared_file = SharedFile.from_source(
-            basedir=self.basedir, source=source, filename=filename)
+            path=path, source=source, filename=filename)
         self.append(shared_file)
 
         return shared_file
