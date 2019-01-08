@@ -44,7 +44,7 @@ class XccdfYaml(object):
             parser = XccdfYamlBenchmarkParser(generator, basedir, self.workdir)
             parser.parse(None, data['benchmark'])
             parser.export(output_dir=output_dir, output_file=output_file,
-                             unescape=unescape)
+                          unescape=unescape)
 
         if 'tailoring' in data:
             parser = XccdfYamlTailoringParser(generator, basedir, self.workdir)
@@ -75,7 +75,7 @@ class XccdfYaml(object):
             try:
                 data = yaml.load(open(filename), YamlLoader)
                 validate(data, schema)
-            except:
+            except: # noqa
                 traceback.print_exc()
                 if not skip_valid:
                     raise

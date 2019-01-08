@@ -1,5 +1,6 @@
 import cpe
 
+
 def get_affected_from_cpe(cpe_string):
     """ Returns string formatted for using in the platform -> affected
     in an oval definition metadata (SSG naming scheme).
@@ -43,8 +44,8 @@ def get_affected_from_cpe(cpe_string):
     cpeobject = cpe.CPE(cpe_string)
     vendor = cpeobject.get_vendor()[0]
     product = cpeobject.get_product()[0]
-    affected_string = __mapping__.get(vendor, {}).get(
-                                      product, product.capitalize())
+    affected_string = __mapping__.get(vendor, {})\
+        .get(product, product.capitalize())
     if product in __products_version_exclude__:
         return affected_string
     version = cpeobject.get_version()[0].replace('.', '')

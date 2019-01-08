@@ -102,8 +102,8 @@ class YamlLoader(yaml.Loader):
     def from_template(self, node):
         params = self.construct_mapping(node, True)
         template_string, template_content = next(iter(params.items()))
-        filename, template_name = (template_string.split(':', 1)
-                                   + [None, ])[:2]
+        filename, template_name = \
+            (template_string.split(':', 1) + [None, ])[:2]
         if filename in self._templates:
             template = self._templates[filename]
         else:

@@ -10,10 +10,9 @@ import lxml.etree as etree
 from collections import OrderedDict
 from xccdf_yaml.common import SharedFiles
 from xccdf_yaml.misc import unlist
-from xccdf_yaml.xccdf.elements import XccdfGenerator
+# from xccdf_yaml.xccdf.elements import XccdfGenerator
 
 from xccdf_yaml.xccdf.check import PARSERS
-
 
 
 class XccdfYamlParser(object):
@@ -119,6 +118,7 @@ class XccdfYamlProfileParser(XccdfYamlParser):
                                          self.generator.id('value', idref),
                                          value=params)
 
+
 class XccdfYamlValueParser(XccdfYamlParser):
     """
     - value_id:
@@ -168,7 +168,7 @@ class XccdfYamlValueParser(XccdfYamlParser):
 
         value_obj.set('value', value)
 
-        for key in ['operator',]:
+        for key in ['operator', ]:
             if key in data:
                 value_obj.set_attr(key, data[key])
 

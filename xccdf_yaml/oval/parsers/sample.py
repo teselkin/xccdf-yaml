@@ -1,4 +1,4 @@
-from xccdf_yaml.oval.parsers.common import ParsedObjects
+# from xccdf_yaml.oval.parsers.common import ParsedObjects
 from xccdf_yaml.oval.parsers.common import GenericParser
 
 

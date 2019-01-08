@@ -9,6 +9,7 @@ from xccdf_yaml.oval.elements import Criterion
 # from xccdf_yaml.oval import Metadata
 from xccdf_yaml.cpe import get_affected_from_cpe
 
+
 class SysctlParser(GenericParser):
     __id__ = 'sysctl'
     __ns__ = 'oval-def-unix'
@@ -53,7 +54,6 @@ class SysctlParser(GenericParser):
                 metadata.set_affected('unix', get_affected_from_cpe(affect))
         else:
             metadata.set_affected('unix', get_affected_from_cpe(affected))
-
 
         criteria = definition.add_criteria()
         for test in res.tests:

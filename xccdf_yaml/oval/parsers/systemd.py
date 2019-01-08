@@ -37,12 +37,11 @@ class SystemdParser(GenericParser):
         if metadata.get('disabled', False):
             service_state = 'inactive'
             dep_check = 'none satisfy'
-            operator = 'OR'
+            # operator = 'OR'
             test_running_attrs = {
                 'check': 'all',
                 'check_existence': 'any_exist'
             }
-
 
         # Check target
         # object
@@ -72,7 +71,6 @@ class SystemdParser(GenericParser):
         test.add_state(state)
 
         res.tests.append(test)
-
 
         # Check socket
         # object
@@ -107,7 +105,6 @@ class SystemdParser(GenericParser):
 
         res.tests.append(test)
 
-
         # Check service [not]running
         # object
         obj = OvalObject('oval:service_{}_state:obj:1'.format(name),
@@ -119,7 +116,7 @@ class SystemdParser(GenericParser):
         )
 
         obj.sub_element('unit')\
-            .set_text('{}\.(socket|service)'.format(name))\
+            .set_text(r'{}\.(socket|service)'.format(name))\
             .set_attr('operation', 'pattern match')
 
         obj.sub_element('property').set_text('ActiveState')
@@ -161,24 +158,23 @@ class SystemdParser(GenericParser):
         else:
             metadata.set_affected('unix', get_affected_from_cpe(affected))
 
-
         criteria = definition.add_criteria(operator='AND')
 
         statecriterion = Criterion('oval:service_{}_state:tst:1'.format(name))
         criteria.add_criterion(statecriterion)
 
         if service_disabled:
-            srvcriterion = Criterion('oval:target_wants_{}:tst:1'\
+            srvcriterion = Criterion('oval:target_wants_{}:tst:1'
                                      .format(name))
-            sockcriretion = Criterion('oval:target_wants_{}_socket:tst:1'\
+            sockcriretion = Criterion('oval:target_wants_{}_socket:tst:1'
                                       .format(name))
             criteria.add_criterion(srvcriterion)
             criteria.add_criterion(sockcriretion)
         else:
             srvcrit = Criteria()
-            srvcriterion = Criterion('oval:target_wants_{}:tst:1'\
+            srvcriterion = Criterion('oval:target_wants_{}:tst:1'
                                      .format(name))
-            sockcriterion = Criterion('oval:target_wants_{}_socket:tst:1'\
+            sockcriterion = Criterion('oval:target_wants_{}_socket:tst:1'
                                       .format(name))
             srvcrit.add_criterion(srvcriterion)
             srvcrit.add_criterion(sockcriterion)

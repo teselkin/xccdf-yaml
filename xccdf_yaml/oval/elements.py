@@ -120,7 +120,7 @@ class OvalDefinitions(XmlBase):
 
         self.remove_elements(name='objects')
         if len(self._objects) > 0:
-            objects  = self.sub_element('objects')
+            objects = self.sub_element('objects')
             for x in self._objects.values():
                 objects.append(x)
 
@@ -144,6 +144,7 @@ class OvalGenerator(XmlBase):
         'schema_version',
         'timestamp',
     )
+
     def __init__(self):
         super().__init__('generator')
 
@@ -162,6 +163,7 @@ class ExternalVariable(XmlBase):
         'id',
         'version'
     )
+
     def __init__(self, id, datatype, version='1', comment=None):
         super().__init__('external_variable')
         comment = 'External variable' if not comment else comment
@@ -176,6 +178,7 @@ class Definition(XmlBase):
         'metadata',
         'criteria',
     )
+
     def __init__(self, id, version='1', class_name='compliance'):
         super().__init__('definition')
         self.set_attr('id', id)
@@ -210,6 +213,7 @@ class Metadata(XmlBase):
         'affected',
         'description',
     )
+
     def __init__(self):
         super().__init__('metadata')
 
@@ -283,7 +287,7 @@ class OvalTest(XmlBase):
             'version': version,
         })
         self.set_attr('comment', 'Test {}'.format(id))
-        #self.set_attr('id', id)
+        # self.set_attr('id', id)
         self._objects = set()
         self._states = set()
 

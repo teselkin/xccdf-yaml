@@ -6,7 +6,6 @@ import zlib
 import textwrap
 
 
-
 SHELL_ENTRYPOINT = """#!/bin/bash
 set -o errtrace
 set -o nounset
@@ -47,7 +46,7 @@ fi
 exit_with PASS
 """
 
-PYTHON_ENTRYPOINT="""#!/usr/bin/python
+PYTHON_ENTRYPOINT = """#!/usr/bin/python
 import os
 import sys
 import traceback
@@ -63,7 +62,8 @@ def exit_fail():
 
 try:
     filename = os.environ.get('XCCDF_VALUE_ENTRYPOINT')
-    exec(compile(open(filename, "rb").read(), filename, 'exec'), globals(), locals())
+    exec(compile(open(filename, "rb").read(), filename, 'exec'),
+         globals(), locals())
     exit_pass()
 except:
     traceback.print_exc(file=sys.stdout)
