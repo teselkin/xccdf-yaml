@@ -134,11 +134,13 @@ class ScriptCheckEngineParser(GenericParser):
             for item in metadata['export']:
                 if isinstance(item, dict):
                     for value_id, export_name in item.items():
-                        check.check_export(value_id=value_id,
+                        value_xccdf_id = self.xccdf.id('value', value_id)
+                        check.check_export(value_id=value_xccdf_id,
                                            export_name=export_name)
                 else:
                     export_name = re.sub(r'[^\w\d]', '_', item).upper()
-                    check.check_export(value_id=item,
+                    value_xccdf_id = self.xccdf.id('value', item)
+                    check.check_export(value_id=value_xccdf_id,
                                        export_name=export_name)
 
         return result
