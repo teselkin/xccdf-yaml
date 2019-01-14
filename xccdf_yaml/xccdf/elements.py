@@ -1,3 +1,4 @@
+import datetime
 import re
 
 from collections import namedtuple, OrderedDict
@@ -103,7 +104,7 @@ class XccdfBenchmarkElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
         self._groups = OrderedDict()
         self._values = OrderedDict()
         self._dc_metadata = None
-        self._version = version
+        self._version = XccdfVersionElement(self.xccdf, version)
         self._status = status
         self._status_date = status_date
 
@@ -118,9 +119,9 @@ class XccdfBenchmarkElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
             self._status_date = status_date
         return self
 
-    def set_version(self, version):
+    def set_version(self, version=None):
         if version:
-            self._version = version
+            self._version = XccdfVersionElement(self.xccdf, version)
         return self
 
     def add_platform(self, name):
@@ -166,7 +167,7 @@ class XccdfBenchmarkElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
             self.append(self._dc_metadata)
 
         self.remove_elements(name='version')
-        self.sub_element('version').set_text(self._version)
+        self.append(self._version)
 
         self.remove_elements(name='status')
         element = self.sub_element('status').set_text(self._status)
@@ -199,7 +200,7 @@ class XccdfTailoringElement(XmlBase):
         self.xccdf = xccdf
         self.set_attr('id', self.xccdf.id('tailoring', id))
         self._profiles = OrderedDict()
-        self._version = version
+        self._version = XccdfVersionElement(self.xccdf, version)
         self._status = status
         self._status_date = status_date
 
@@ -217,9 +218,9 @@ class XccdfTailoringElement(XmlBase):
             self._status_date = status_date
         return self
 
-    def set_version(self, version):
+    def set_version(self, version=None):
         if version:
-            self._version = version
+            self._version = XccdfVersionElement(self.xccdf, version)
         return self
 
     def update_elements(self):
@@ -228,7 +229,7 @@ class XccdfTailoringElement(XmlBase):
             self.append(x)
 
         self.remove_elements(name='version')
-        self.sub_element('version').set_text(self._version)
+        self.append(self._version)
 
         self.remove_elements(name='status')
         element = self.sub_element('status').set_text(self._status)
@@ -528,6 +529,19 @@ class XccdfValueElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
         self.remove_elements(name='upper-bound')
         for x in self._upper_bound.values():
             self.append(x)
+
+
+class XccdfVersionElement(XmlBase):
+    def __init__(self, xccdf, version):
+        super().__init__('version')
+        self.xccdf = xccdf
+        self.set_time()
+        self.set_text(version)
+
+    def set_time(self):
+        now = datetime.datetime.now()
+        xs_datetime = datetime.datetime.strftime(now, "%Y-%m-%dT%H:%M:%S")
+        self.set_attr('time', xs_datetime)
 
 
 class XccdfReferenceElement(XccdfDublinCoreElement):
