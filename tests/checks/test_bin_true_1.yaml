@@ -1,5 +1,8 @@
-test_bin_true_1: !from-template
-  "templates.yaml:base-template":
+!merge
+  filename: "templates.yaml"
+  key: "base-template"
+  content:
+    id: test_bin_true_1
     type: cmd_exec
     profiles:
       - profile1:

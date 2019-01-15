@@ -62,14 +62,14 @@ class XccdfYaml(object):
         if 'benchmark' in data:
             parser = XccdfYamlBenchmarkParser(generator, self.basedir,
                                               self.workdir)
-            parser.parse(None, data['benchmark'])
+            parser.parse(data['benchmark'])
             parser.export(output_dir=output_dir, output_file=output_file,
                           unescape=unescape)
 
         if 'tailoring' in data:
             parser = XccdfYamlTailoringParser(generator, self.basedir,
                                               self.workdir)
-            parser.parse(None, data['tailoring'])
+            parser.parse(data['tailoring'])
             parser.export(output_dir=output_dir, output_file=output_file,
                           unescape=unescape)
 

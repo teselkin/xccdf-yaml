@@ -59,49 +59,49 @@ class XccdfYamlParser(object):
 
 
 class XccdfYamlProfileParser(XccdfYamlParser, StatusParserMixin):
-    def parse(self, id, data):
-        if id is None:
-            id = data['id']
-
-        profile = self.generator.profile(id)
+    def parse(self, data):
+        profile = self.generator.profile(data['id'])
         self._parse(profile, data)
         self.append(profile)
 
     def _parse(self, profile, data):
         """
-        - profile_id:
-            abstract: true | false
-            extends: ''
-            status:
-              - value: <status string>
-                timestamp: "YYYY-MM-DD HH:MM:SS"
-            version: ''
-            title: ''
-            description: ''
-            references:
-              - ''
-            platforms:
-              - ''
-            metadata:
-              - ''
-            selectors:
-              - select:
-                  'id':
-                    selected: true | false
-                    remark:
-                      - ''
-              - set-value:
-                  'id': value
-              - set-complex-value:
-                  'id':
-                    - value
-              - refine-value:
-                  'id':
-                    remark:
-                      - ''
-                    selector:
-              - refine-rule:
-                  'id': value
+        id: <profile id>
+        abstract: true | false
+        extends: ''
+        status:
+          - value: <status string>
+            timestamp: "YYYY-MM-DD HH:MM:SS"
+        version: ''
+        title: ''
+        description: ''
+        references:
+          - ''
+        platforms:
+          - ''
+        metadata:
+          - ''
+        selectors:
+          - select:
+              idref: <item id>
+              target: rule | ???
+              selected: true | false
+              remark:
+                - ''
+          - set-value:
+              idref: <item id>
+              value: <item value>
+          - set-complex-value:
+              idref: <item id>
+              value: <item value>
+          - refine-value:
+              idref: <item id>
+              remark:
+                - ''
+              selector:
+          - refine-rule:
+              idref: <item id>
+              value: <item value>
         """
 
         if 'abstract' in data:
@@ -124,48 +124,41 @@ class XccdfYamlProfileParser(XccdfYamlParser, StatusParserMixin):
             profile.set_description(data['description'])
 
         for item in data.get('selectors', []):
-            for selector_name, selector_data in item.items():
-                for idref, params in selector_data.items():
-                    if selector_name == 'select':
-                        target, idref = idref.split(':', 1)
-                        if isinstance(params, dict):
-                            profile.selector('select',
-                                             self.generator.id(target, idref),
-                                             selected=params['selected'])
-                        else:
-                            profile.selector('select',
-                                             self.generator.id(target, idref),
-                                             selected=params)
-                    elif selector_name == 'set-value':
-                        profile.selector('set-value',
-                                         self.generator.id('value', idref),
-                                         value=params)
+            for selector_name, selector_params in item.items():
+                if selector_name == 'select':
+                    profile.selector(
+                        'select',
+                        self.generator.id(
+                            selector_params.get('target', 'rule'),
+                            selector_params['idref']),
+                        selected=selector_params['selected'])
+                elif selector_name == 'set-value':
+                    profile.selector(
+                        'set-value',
+                        self.generator.id('value', selector_params['idref']),
+                        value=selector_params['value'])
 
 
 class XccdfYamlValueParser(XccdfYamlParser):
     """
-    - value_id:
-        type: string
-        operator: match
-        value: value2_123
-        default: value2_456
-        title: value2_title
-        description: value2_description
-        lower-bound: value2_lower_bound
-        lower-bound:
-          low: value2_lower_bound_low
-          high: value2_lower_bound_high
-        upper-bound: value2_upper_bound
-        upper-bound:
-          low: value2_upper_bound_low
-          high: value2_upper_bound_high
-
+    id: <value id>
+    type: string | code
+    operator: match
+    value: value2_123
+    default: value2_456
+    title: value2_title
+    description: value2_description
+    lower-bound: value2_lower_bound
+    lower-bound:
+      low: value2_lower_bound_low
+      high: value2_lower_bound_high
+    upper-bound: value2_upper_bound
+    upper-bound:
+      low: value2_upper_bound_low
+      high: value2_upper_bound_high
     """
-    def parse(self, id, data):
-        if id is None:
-            id = data['id']
-
-        value = self.generator.value(id)
+    def parse(self, data):
+        value = self.generator.value(data['id'])
         self._parse(value, data)
         self.append(value)
 
@@ -207,29 +200,27 @@ class XccdfYamlValueParser(XccdfYamlParser):
 
 class XccdfYamlRuleParser(XccdfYamlParser):
     """
-    - test_bin_true:
-        type: sce
-        template: <template name>
-        title: &test_bin_true_title
-          "Test /bin/true"
-        description: |
-          This is a test script
-        rationale: |
-          Test script rationale
-        reference:
-          - ref1
-          - text: Let me Google it for you
-        url: 'http://google.com'
-          -
-            text: *test_bin_true_title
-            url: 'https://www.google.ru/search?q=qwe'
-        export:
-          - value_1
-          - value_2: value2
-        check:
-          engine: python
-          codeblock: |
-            <code>
+    id: <rule id>
+    type: sce
+    template: <template name>
+    title: "Test /bin/true"
+    description: |
+      This is a test script
+    rationale: |
+      Test script rationale
+    profiles:
+      - id: <profile id>
+        selected: true | false
+    reference:
+      - text: reference text
+        link: Optional URL in case it's a hyperlink
+    export:
+      - value_1
+      - value_2: value2
+    check:
+      engine: python
+      codeblock: |
+        <code>
     """
     def __init__(self, generator, benchmark, parsed_args=None,
                  shared_files=None):
@@ -237,11 +228,8 @@ class XccdfYamlRuleParser(XccdfYamlParser):
         self.parsed_args = parsed_args
         self.shared_files = shared_files
 
-    def parse(self, id, data):
-        if id is None:
-            id = data['id']
-
-        rule = self.generator.rule(id)
+    def parse(self, data):
+        rule = self.generator.rule(data['id'])
         self._parse(rule, data)
         self.append(rule)
 
@@ -259,11 +247,8 @@ class XccdfYamlRuleParser(XccdfYamlParser):
             rule.add_ident(ident_name, ident_system)
 
         for reference in data.get('reference', []):
-            if isinstance(reference, dict):
-                rule.add_reference(reference['text'],
-                                   href=reference.get('url'))
-            else:
-                rule.add_reference(reference)
+            rule.add_reference(reference['text'],
+                               href=reference.get('link'))
 
         for reference in data.get('dc-reference', []):
             ref = rule.add_dc_reference()
@@ -274,14 +259,10 @@ class XccdfYamlRuleParser(XccdfYamlParser):
                     ref.sub_element(element_name).set_text(element_value)
 
         for profile in data.get('profiles', []):
-            if isinstance(profile, dict):
-                profile_name, profile_data = next(iter(profile.items()))
-                rule.add_to_profile(
-                    name=profile_name,
-                    selected=profile_data.get('selected', False)
-                )
-            else:
-                rule.add_to_profile(name=profile, selected=True)
+            rule.add_to_profile(
+                name=profile['id'],
+                selected=profile.get('selected', True)
+            )
 
         platforms = list(self.benchmark.platforms)
         if platforms and not data.get('affected', False):
@@ -320,6 +301,8 @@ class XccdfYamlBenchmarkParser(XccdfYamlParser, StatusParserMixin):
     # Target platform can be specified by CPE name if required.
     # If this parameter not defined, benchmark will run everywhere.
     platform: 'cpe:/o:canonical:ubuntu_linux:16.04'
+    platforms:
+      - 'cpe:/o:canonical:ubuntu_linux:16.04'
 
     # Files that should be copied to output directory in addition
     # to scripts generated from rules below.
@@ -327,13 +310,10 @@ class XccdfYamlBenchmarkParser(XccdfYamlParser, StatusParserMixin):
       - functions.sh
 
     values:
-      - test:
-          type: code
-          value: !include-raw 'schema.yaml'
+      - <value data>
 
     profiles:
-      - <profile name>:
-          <profile params>
+      - <profile params>
 
     """
     def __init__(self, generator, basedir, workdir):
@@ -343,11 +323,8 @@ class XccdfYamlBenchmarkParser(XccdfYamlParser, StatusParserMixin):
         self.shared_files = SharedFiles(basedir=basedir, workdir=workdir)
         self.filename = None
 
-    def parse(self, id, data):
-        if id is None:
-            id = data['id']
-
-        self.benchmark = self.generator.benchmark(id)
+    def parse(self, data):
+        self.benchmark = self.generator.benchmark(data['id'])
         self._parse(self.benchmark, data)
         return self.benchmark
 
@@ -359,44 +336,40 @@ class XccdfYamlBenchmarkParser(XccdfYamlParser, StatusParserMixin):
                 data.get('status', [{'value': 'draft'}, ])):
             benchmark.append_status(status)
 
-        platform = data.get('platform')
-        if platform:
-            if isinstance(platform, list):
-                for platform_str in platform:
-                    benchmark.add_platform(platform_str.rstrip())
-            else:
-                benchmark.add_platform(platform.rstrip())
+        if 'platform' in data:
+            benchmark.add_platform(data['platform'].rstrip())
+
+        for platform in data.get('platforms', []):
+            benchmark.add_platform(platform.rstrip())
 
         dc_metadata = data.get('dc-metadata', {})
         if dc_metadata:
             metadata = benchmark.add_dc_metadata()
-            for name, values in dc_metadata.items():
-                if isinstance(values, list):
-                    for value in values:
+            for name, value_parser in dc_metadata.items():
+                if isinstance(value_parser, list):
+                    for value in value_parser:
                         metadata.sub_element(name).set_text(html.escape(value))
                 else:
-                    metadata.sub_element(name).set_text(html.escape(values))
+                    metadata.sub_element(name).set_text(html.escape(value_parser))
 
         # Import profiles
 
-        profiles = XccdfYamlProfileParser(self.generator, benchmark)
+        profile_parser = XccdfYamlProfileParser(self.generator, benchmark)
 
-        profiles_data = data.get('profiles', [{
-            'default': {
-                'title': 'Default Profile',
-            }
+        profiles = data.get('profiles', [{
+            'id': 'default',
+            'title': 'Default Profile',
         }, ])
 
-        for profile_map in profiles_data:
-            for profile_id, profile_data in profile_map.items():
-                profiles.parse(profile_id, profile_data)
+        for profile_data in profiles:
+            profile_parser.parse(profile_data)
 
-        if len(profiles) > 1:
+        if len(profile_parser) > 1:
             default_profile = None
         else:
-            default_profile = profiles[0]
+            default_profile = profile_parser[0]
 
-        for profile in profiles:
+        for profile in profile_parser:
             self.benchmark.append_profile(profile)
 
         # Import groups
@@ -412,11 +385,11 @@ class XccdfYamlBenchmarkParser(XccdfYamlParser, StatusParserMixin):
 
         # Import values
 
-        values = XccdfYamlValueParser(self.generator, benchmark)
-        for value_map in data.get('values', []):
-            for value_id, value_data in value_map.items():
-                values.parse(value_id, value_data)
-        for value in values:
+        value_parser = XccdfYamlValueParser(self.generator, benchmark)
+        for value_data in data.get('values', []):
+            value_parser.parse(value_data)
+
+        for value in value_parser:
             benchmark.append_value(value)
 
         # Import shared files
@@ -430,13 +403,12 @@ class XccdfYamlBenchmarkParser(XccdfYamlParser, StatusParserMixin):
 
         # Import rules
 
-        rules = XccdfYamlRuleParser(self.generator, benchmark,
-                                    shared_files=self.shared_files)
-        for rule_map in unlist(data.get('rules', [])):
-            for rule_id, rule_data in rule_map.items():
-                rules.parse(rule_id, rule_data)
+        rule_parser = XccdfYamlRuleParser(self.generator, benchmark,
+                                          shared_files=self.shared_files)
+        for rule_data in unlist(data.get('rules', [])):
+            rule_parser.parse(rule_data)
 
-        for rule in rules:
+        for rule in rule_parser:
             group.append_rule(rule)
             if default_profile:
                 default_profile.append_rule(rule, selected=True)
@@ -483,6 +455,24 @@ class XccdfYamlBenchmarkParser(XccdfYamlParser, StatusParserMixin):
 
 
 class XccdfYamlTailoringParser(XccdfYamlParser):
+    """
+    id: 'external_variable_benchmark_tailoring'
+    benchmark: 'external_variable_benchmark'
+    status:
+      - value: 'incomplete'
+    version: '0.2'
+    metadata:
+      - ''
+    profiles:
+      - id: 'default-modified'
+        extends: default
+        title: Profile from tailoring
+        selectors:
+          - set-value:
+             idref: 'sample_value'
+             value: 'asd'
+    """
+
     def __init__(self, generator, basedir, workdir):
         super(XccdfYamlTailoringParser, self).__init__(generator)
         self.basedir = basedir
@@ -490,11 +480,8 @@ class XccdfYamlTailoringParser(XccdfYamlParser):
         self.shared_files = SharedFiles(basedir=basedir, workdir=workdir)
         self.filename = None
 
-    def parse(self, id, data):
-        if id is None:
-            id = data['id']
-
-        self.tailoring = self.generator.tailoring(id)
+    def parse(self, data):
+        self.tailoring = self.generator.tailoring(data['id'])
         self._parse(self.tailoring, data)
         return self.tailoring
 
@@ -507,19 +494,17 @@ class XccdfYamlTailoringParser(XccdfYamlParser):
 
         # Import profiles
 
-        profiles = XccdfYamlProfileParser(self.generator, tailoring)
+        profile_parser = XccdfYamlProfileParser(self.generator, tailoring)
 
-        profiles_data = data.get('profiles', [{
-            'default': {
-                'title': 'Default Profile',
-            }
+        profiles = data.get('profiles', [{
+            'id': 'default',
+            'title': 'Default Profile',
         }, ])
 
-        for profile_map in profiles_data:
-            for profile_id, profile_data in profile_map.items():
-                profiles.parse(profile_id, profile_data)
+        for profile_data in profiles:
+            profile_parser.parse(profile_data)
 
-        for profile in profiles:
+        for profile in profile_parser:
             self.tailoring.append_profile(profile)
 
     def export(self, output_dir, output_file=None, unescape=False):

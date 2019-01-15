@@ -1,25 +1,21 @@
-test_bin_false:
-  type: cmd_exec
-  title: &test_bin_true_title "Test /bin/false"
-  description: |
-    This is a test script
-  rationale: |
-    Some **rationale**
-  reference:
-  - ref1
-  - text: Let me Google it for you
-    url: 'http://google.com'
-  -
-    text: *test_bin_true_title
-    url: 'https://www.google.ru/\
-      search?q=qwe'
-  cmd: |
-    /bin/false
-  python:
-    imports:
+id: test_bin_false
+type: cmd_exec
+title: &test_bin_true_title "Test /bin/false"
+description: |
+  This is a test script
+rationale: |
+  Some **rationale**
+reference:
+  - text: *test_bin_true_title
+    link: "https://www.google.ru/\
+          search?q=qwe"
+cmd: |
+  /bin/false
+python:
+  imports:
     - 'import logging'
-    main: |
-      print("Hello World")
-    raw: |
-      def main():
-          print("Hello World")
+  main: |
+    print("Hello World")
+  raw: |
+    def main():
+        print("Hello World")

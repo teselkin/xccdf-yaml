@@ -1,11 +1,11 @@
-test_sce_parser:
-  type: sce
-  title: "Test SCE parser"
-  description: This is a test SCE script
-  rationale: |
-    Some **rationale**
-  check:
-    include:
-      - test
-    codeblock: |
-      exit 101
+id: test_sce_parser
+type: sce
+title: "Test SCE parser"
+description: This is a test SCE script
+rationale: |
+  Some **rationale**
+check:
+  include:
+    - test
+  codeblock: |
+    exit 101
