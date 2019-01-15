@@ -16,6 +16,25 @@ from xccdf_yaml.oval.parsers import PARSERS as OVAL_PARSERS
 from xccdf_yaml.xccdf.check import PARSERS as XCCDF_PARSERS
 
 
+class StatusParserMixin(object):
+    """
+    status:
+      - value: <status string>
+        timestamp: "YYYY-MM-DD HH:MM:SS"
+
+    """
+
+    def _parse_status(self, data):
+        items = []
+
+        for list_item in data:
+            items.append(
+                self.generator.status(status=list_item['value'],
+                                      timestamp=list_item.get('timestamp')))
+
+        return items
+
+
 class XccdfYamlParser(object):
     def __init__(self, generator, benchmark=None):
         self._items = OrderedDict()
@@ -39,7 +58,7 @@ class XccdfYamlParser(object):
         self._items.setdefault(item_id, item)
 
 
-class XccdfYamlProfileParser(XccdfYamlParser):
+class XccdfYamlProfileParser(XccdfYamlParser, StatusParserMixin):
     def parse(self, id, data):
         if id is None:
             id = data['id']
@@ -53,7 +72,9 @@ class XccdfYamlProfileParser(XccdfYamlParser):
         - profile_id:
             abstract: true | false
             extends: ''
-            status: ''
+            status:
+              - value: <status string>
+                timestamp: "YYYY-MM-DD HH:MM:SS"
             version: ''
             title: ''
             description: ''
@@ -90,8 +111,8 @@ class XccdfYamlProfileParser(XccdfYamlParser):
             profile.set_attr('extends',
                              self.generator.id('profile', data['extends']))
 
-        if 'status' in data:
-            profile.set_status(data['status'])
+        for status in self._parse_status(data.get('status', [])):
+            profile.append_status(status)
 
         if 'version' in data:
             profile.set_version(data['version'])
@@ -283,7 +304,38 @@ class XccdfYamlRuleParser(XccdfYamlParser):
         parser.parse(rule, data)
 
 
-class XccdfYamlBenchmarkParser(XccdfYamlParser):
+class XccdfYamlBenchmarkParser(XccdfYamlParser, StatusParserMixin):
+    """
+    id: 'sample_xccdf'
+    version: 0.1
+
+    title: Sample XCCDF Benchmark
+    description: |
+      Sample XCCDF Benchmark description [https://google.com](Google)
+
+    status:
+      - value: <status string>
+        timestamp: "YYYY-MM-DD HH:MM:SS"
+
+    # Target platform can be specified by CPE name if required.
+    # If this parameter not defined, benchmark will run everywhere.
+    platform: 'cpe:/o:canonical:ubuntu_linux:16.04'
+
+    # Files that should be copied to output directory in addition
+    # to scripts generated from rules below.
+    shared-files:
+      - functions.sh
+
+    values:
+      - test:
+          type: code
+          value: !include-raw 'schema.yaml'
+
+    profiles:
+      - <profile name>:
+          <profile params>
+
+    """
     def __init__(self, generator, basedir, workdir):
         super(XccdfYamlBenchmarkParser, self).__init__(generator)
         self.basedir = basedir
@@ -302,6 +354,10 @@ class XccdfYamlBenchmarkParser(XccdfYamlParser):
     def _parse(self, benchmark, data):
         benchmark.set_title(data.get('title'))
         benchmark.set_description(data.get('description'))
+
+        for status in self._parse_status(
+                data.get('status', [{'value': 'draft'}, ])):
+            benchmark.append_status(status)
 
         platform = data.get('platform')
         if platform:

@@ -42,6 +42,17 @@ class SetDescriptionMixin(object):
         return self
 
 
+class DateTimeMixin(object):
+    def _datetime(self, timestamp=None):
+        if timestamp is None:
+            timestamp = datetime.datetime.now()
+        elif isinstance(timestamp, str):
+            timestamp = datetime.datetime.strptime(timestamp,
+                                                   "%Y-%m-%d %H:%M:%S")
+
+        return datetime.datetime.strftime(timestamp,"%Y-%m-%dT%H:%M:%S")
+
+
 class XccdfGenerator(object):
     def __init__(self, vendor):
         self.vendor = vendor
@@ -79,6 +90,9 @@ class XccdfGenerator(object):
     def dc_metadata(self, *args, **kwargs):
         return XccdfMetadataElement(self, *args, **kwargs)
 
+    def status(self, *args, **kwargs):
+        return XccdfStatusElement(self, *args, **kwargs)
+
 
 class XccdfBenchmarkElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
     __elements_order__ = (
@@ -94,8 +108,7 @@ class XccdfBenchmarkElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
         'Rule',
     )
 
-    def __init__(self, xccdf, id, version='0.1', status='draft',
-                 status_date=None):
+    def __init__(self, xccdf, id, version='0.1'):
         super().__init__('Benchmark')
         self.xccdf = xccdf
         self.set_attr('id', self.xccdf.id('benchmark', id))
@@ -105,18 +118,21 @@ class XccdfBenchmarkElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
         self._values = OrderedDict()
         self._dc_metadata = None
         self._version = XccdfVersionElement(self.xccdf, version)
-        self._status = status
-        self._status_date = status_date
+        self._status = []
 
     @property
     def platforms(self):
         return self._platforms
 
-    def set_status(self, status='draft', status_date=None):
-        if status:
-            self._status = status
-        if status_date:
-            self._status_date = status_date
+    def set_status(self, status_string='draft', status_date=None):
+        status = XccdfStatusElement(self.xccdf,
+                                    status=status_string,
+                                    timestamp=status_date)
+        self._status.append(status)
+        return self
+
+    def append_status(self, item):
+        self._status.append(item)
         return self
 
     def set_version(self, version=None):
@@ -170,9 +186,8 @@ class XccdfBenchmarkElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
         self.append(self._version)
 
         self.remove_elements(name='status')
-        element = self.sub_element('status').set_text(self._status)
-        if self._status_date:
-            element.set_attr('date', self._status_date)
+        for x in self._status:
+            self.append(x)
 
         self.remove_elements(name='Profile')
         for x in self._profiles.values():
@@ -194,15 +209,13 @@ class XccdfTailoringElement(XmlBase):
         'Profile',
     )
 
-    def __init__(self, xccdf, id, version='0.1', status='draft',
-                 status_date=None):
+    def __init__(self, xccdf, id, version='0.1'):
         super().__init__('Tailoring')
         self.xccdf = xccdf
         self.set_attr('id', self.xccdf.id('tailoring', id))
         self._profiles = OrderedDict()
         self._version = XccdfVersionElement(self.xccdf, version)
-        self._status = status
-        self._status_date = status_date
+        self._status = []
 
     def append_profile(self, item):
         self._profiles.setdefault(item.get_attr('id'), item)
@@ -211,11 +224,15 @@ class XccdfTailoringElement(XmlBase):
     def add_profile(self, id):
         return self._profiles.setdefault(id, self.xccdf.profile(id))
 
-    def set_status(self, status='draft', status_date=None):
-        if status:
-            self._status = status
-        if status_date:
-            self._status_date = status_date
+    def set_status(self, status_string='draft', status_date=None):
+        status = XccdfStatusElement(self.xccdf,
+                                    status=status_string,
+                                    timestamp=status_date)
+        self._status.append(status)
+        return self
+
+    def append_status(self, item):
+        self._status.append(item)
         return self
 
     def set_version(self, version=None):
@@ -232,9 +249,8 @@ class XccdfTailoringElement(XmlBase):
         self.append(self._version)
 
         self.remove_elements(name='status')
-        element = self.sub_element('status').set_text(self._status)
-        if self._status_date:
-            element.set_attr('date', self._status_date)
+        for x in self._status:
+            self.append(x)
 
 
 class XccdfProfileElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
@@ -243,6 +259,7 @@ class XccdfProfileElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
     __elements_order__ = (
         'title',
         'description',
+        'status',
         'select',
         'set-value',
         'set-complex-value',
@@ -255,11 +272,15 @@ class XccdfProfileElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
         self.xccdf = xccdf
         self.set_attr('id', self.xccdf.id('profile', id))
         self._selectors = OrderedDict()
+        self._status = []
 
     def set_status(self, status='draft', status_date=None):
-        element = self.sub_element('status').set_text(status)
-        if status_date:
-            element.set_attr('date', status_date)
+        self._status.append(XccdfStatusElement(status=status,
+                                               timestamp=status_date))
+        return self
+
+    def append_status(self, item):
+        self._status.append(item)
         return self
 
     def set_version(self, version):
@@ -279,6 +300,10 @@ class XccdfProfileElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
     def update_elements(self):
         self.remove_elements(name='select')
         self.remove_elements(name='set-value')
+
+        self.remove_elements(name='status')
+        for x in self._status:
+            self.append(x)
 
         for key, value in self._selectors.items():
             if key.selector == 'select':
@@ -531,17 +556,29 @@ class XccdfValueElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
             self.append(x)
 
 
-class XccdfVersionElement(XmlBase):
-    def __init__(self, xccdf, version):
+class XccdfStatusElement(XmlBase, DateTimeMixin):
+    valid_statuses = (
+        'incomplete', 'draft', 'interim', 'accepted', 'deprecated'
+    )
+
+    def __init__(self, xccdf, status='draft', timestamp=None):
+        super().__init__('status')
+        self.xccdf = xccdf
+        self.set_attr('date', self._datetime(timestamp))
+        if status in self.valid_statuses:
+            self.set_text(status)
+        else:
+            raise Exception("status '{}' is not valied. "
+                            "Valid statuses are {}"
+                            .format(status, self.valid_statuses))
+
+
+class XccdfVersionElement(XmlBase, DateTimeMixin):
+    def __init__(self, xccdf, version, timestamp=None):
         super().__init__('version')
         self.xccdf = xccdf
-        self.set_time()
+        self.set_attr('time', self._datetime(timestamp))
         self.set_text(version)
-
-    def set_time(self):
-        now = datetime.datetime.now()
-        xs_datetime = datetime.datetime.strftime(now, "%Y-%m-%dT%H:%M:%S")
-        self.set_attr('time', xs_datetime)
 
 
 class XccdfReferenceElement(XccdfDublinCoreElement):
