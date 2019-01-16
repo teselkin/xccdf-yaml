@@ -454,7 +454,7 @@ class XccdfYamlBenchmarkParser(XccdfYamlParser, StatusParserMixin):
         return output_file
 
 
-class XccdfYamlTailoringParser(XccdfYamlParser):
+class XccdfYamlTailoringParser(XccdfYamlParser, StatusParserMixin):
     """
     id: 'external_variable_benchmark_tailoring'
     benchmark: 'external_variable_benchmark'
@@ -489,8 +489,8 @@ class XccdfYamlTailoringParser(XccdfYamlParser):
         if 'version' in data:
             tailoring.set_version(data['version'])
 
-        for status in data.get('status', []):
-            tailoring.set_status(status.get('status'), status.get('date'))
+        for status in self._parse_status(data.get('status', [])):
+            tailoring.append_status(status)
 
         # Import profiles
 
