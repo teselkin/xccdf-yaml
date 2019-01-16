@@ -30,7 +30,7 @@ class StatusParserMixin(object):
         for list_item in data:
             items.append(
                 self.generator.status(status=list_item['value'],
-                                      timestamp=list_item.get('timestamp')))
+                                      timestamp=list_item.get('date')))
 
         return items
 

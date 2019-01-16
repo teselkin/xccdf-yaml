@@ -42,17 +42,6 @@ class SetDescriptionMixin(object):
         return self
 
 
-class DateTimeMixin(object):
-    def _datetime(self, timestamp=None):
-        if timestamp is None:
-            timestamp = datetime.datetime.now()
-        elif isinstance(timestamp, str):
-            timestamp = datetime.datetime.strptime(timestamp,
-                                                   "%Y-%m-%d %H:%M:%S")
-
-        return datetime.datetime.strftime(timestamp,"%Y-%m-%dT%H:%M:%S")
-
-
 class XccdfGenerator(object):
     def __init__(self, vendor):
         self.vendor = vendor
@@ -556,7 +545,7 @@ class XccdfValueElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
             self.append(x)
 
 
-class XccdfStatusElement(XmlBase, DateTimeMixin):
+class XccdfStatusElement(XmlBase):
     valid_statuses = (
         'incomplete', 'draft', 'interim', 'accepted', 'deprecated'
     )
@@ -564,21 +553,38 @@ class XccdfStatusElement(XmlBase, DateTimeMixin):
     def __init__(self, xccdf, status='draft', timestamp=None):
         super().__init__('status')
         self.xccdf = xccdf
-        self.set_attr('date', self._datetime(timestamp))
+        self.set_attr('date', self._timestamp(timestamp))
         if status in self.valid_statuses:
             self.set_text(status)
         else:
-            raise Exception("status '{}' is not valied. "
+            raise Exception("Status '{}' is not valid. "
                             "Valid statuses are {}"
                             .format(status, self.valid_statuses))
 
+    def _timestamp(self, timestamp):
+        if timestamp is None:
+            timestamp = datetime.datetime.now()
+        elif isinstance(timestamp, str):
+            timestamp = datetime.datetime.strptime(timestamp, "%Y-%m-%d")
 
-class XccdfVersionElement(XmlBase, DateTimeMixin):
+        return datetime.datetime.strftime(timestamp, "%Y-%m-%d")
+
+
+class XccdfVersionElement(XmlBase):
     def __init__(self, xccdf, version, timestamp=None):
         super().__init__('version')
         self.xccdf = xccdf
-        self.set_attr('time', self._datetime(timestamp))
+        self.set_attr('time', self._timestamp(timestamp))
         self.set_text(version)
+
+    def _timestamp(self, timestamp):
+        if timestamp is None:
+            timestamp = datetime.datetime.now()
+        elif isinstance(timestamp, str):
+            timestamp = datetime.datetime.strptime(timestamp,
+                                                   "%Y-%m-%d %H:%M:%S")
+
+        return datetime.datetime.strftime(timestamp, "%Y-%m-%dT%H:%M:%S")
 
 
 class XccdfReferenceElement(XccdfDublinCoreElement):
