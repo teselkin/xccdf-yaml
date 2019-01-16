@@ -213,7 +213,7 @@ class XccdfYamlRuleParser(XccdfYamlParser):
         selected: true | false
     reference:
       - text: reference text
-        link: Optional URL in case it's a hyperlink
+        url: Optional URL in case it's a hyperlink
     export:
       - value_1
       - value_2: value2
@@ -248,7 +248,7 @@ class XccdfYamlRuleParser(XccdfYamlParser):
 
         for reference in data.get('reference', []):
             rule.add_reference(reference['text'],
-                               href=reference.get('link'))
+                               href=reference.get('url'))
 
         for reference in data.get('dc-reference', []):
             ref = rule.add_dc_reference()
