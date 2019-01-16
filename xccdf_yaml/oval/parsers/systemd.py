@@ -1,13 +1,12 @@
-from xccdf_yaml.parsers.common import ParsedObjects
-from xccdf_yaml.parsers.common import GenericParser
+from xccdf_yaml.oval.parsers.common import ParsedObjects
+from xccdf_yaml.oval.parsers.common import GenericParser
 
-from xccdf_yaml.oval import Definition
-from xccdf_yaml.oval import OvalObject
-from xccdf_yaml.oval import OvalTest
-from xccdf_yaml.oval import OvalState
-from xccdf_yaml.oval import Criterion
-from xccdf_yaml.oval import Criteria
-# from xccdf_yaml.oval import Metadata
+from xccdf_yaml.oval.elements import Definition
+from xccdf_yaml.oval.elements import OvalObject
+from xccdf_yaml.oval.elements import OvalTest
+from xccdf_yaml.oval.elements import OvalState
+from xccdf_yaml.oval.elements import Criterion
+from xccdf_yaml.oval.elements import Criteria
 from xccdf_yaml.cpe import get_affected_from_cpe
 
 # import os

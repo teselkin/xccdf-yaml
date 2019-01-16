@@ -1,6 +1,13 @@
-test_bin_true_1:
-  type: cmd_exec
-  title: "Test /bin/true #1"
-  description: This is a *test* script
-  cmd: |
-    /bin/true
+!merge
+  filename: "templates.yaml"
+  key: "base-template"
+  content:
+    id: test_bin_true_1
+    type: cmd_exec
+    profiles:
+      - profile1:
+          selected: false
+    title: "Test /bin/true #1"
+    description: This is a *test* script
+    cmd: |
+      /bin/true

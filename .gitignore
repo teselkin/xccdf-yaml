@@ -5,6 +5,7 @@ build/
 sources/
 output/
 venv/
+tests/output/
 *.egg-info/
 *.pyc
 AUTHORS

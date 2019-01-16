@@ -1,10 +1,12 @@
 # import logging
+import argparse
 import sys
 
 import xccdf_yaml.cli.cli as cli
 
 from cliff.app import App
 from cliff.commandmanager import CommandManager
+from xccdf_yaml.appdata import APPDATA
 
 
 class XCCDF_YAML_Manager(CommandManager):
@@ -33,6 +35,14 @@ class XCCDF_YAML_App(App):
             command_manager=XCCDF_YAML_Manager('xccdf_yaml'),
             deferred_help=True,
         )
+
+    def initialize_app(self, argv):
+        parser = argparse.ArgumentParser()
+        parser.add_argument('--workdir', default=None)
+        args, _ = parser.parse_known_args()
+
+        if args.workdir:
+            APPDATA['workdir'] = args.workdir
 
 
 def main():

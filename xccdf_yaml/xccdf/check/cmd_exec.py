@@ -1,5 +1,4 @@
-from xccdf_yaml.parsers.common import GenericParser
-# from xccdf_yaml.parsers.common import ParsedObjects
+from xccdf_yaml.xccdf.check.common import GenericParser
 
 import re
 
@@ -75,16 +74,15 @@ except:
 
 
 class CmdExecParser(GenericParser):
-    def parse(self, id, metadata):
-        result = super(CmdExecParser, self).parse(id, metadata)
-        rule = result.rule
+    def parse(self, rule, metadata):
+        id = rule.get_attr('id')
 
         if 'cmd' in metadata:
-            self.add_shared_file('wrapper-head.sh',
-                                 content=SHELL_WRAPPER_HEAD)\
+            self.shared_files.new('wrapper-head.sh',
+                                  content=SHELL_WRAPPER_HEAD)\
                 .set_executable()
-            self.add_shared_file('wrapper-tail.sh',
-                                 content=SHELL_WRAPPER_TAIL)\
+            self.shared_files.new('wrapper-tail.sh',
+                                  content=SHELL_WRAPPER_TAIL)\
                 .set_executable()
             filename = '{}.sh'.format(id)
             content = []
@@ -110,8 +108,8 @@ class CmdExecParser(GenericParser):
         else:
             raise Exception('No script or cmdline found')
 
-        self.add_shared_file(
-            filename, content='\n'.join(content)).set_executable()
+        self.shared_files.new(filename,
+                              content='\n'.join(content)).set_executable()
 
         check = rule.add_check(system_ns='sce')\
             .check_import(import_name='stdout')\
@@ -128,5 +126,3 @@ class CmdExecParser(GenericParser):
                     export_name = re.sub(r'[^\w\d]', '_', item).upper()
                     check.check_export(value_id=item,
                                        export_name=export_name)
-
-        return result
