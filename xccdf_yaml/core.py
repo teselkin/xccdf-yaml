@@ -59,19 +59,25 @@ class XccdfYaml(object):
         generator = XccdfGenerator('mirantis.com')
         data = yaml.load(open(filename), YamlLoader)
 
+        benchmark_file = None
         if 'benchmark' in data:
             parser = XccdfYamlBenchmarkParser(generator, self.basedir,
                                               self.workdir)
             parser.parse(data['benchmark'])
-            parser.export(output_dir=output_dir, output_file=output_file,
-                          unescape=unescape)
+            benchmark_file = parser.export(
+                output_dir=output_dir, output_file=output_file,
+                unescape=unescape)
 
+        tailoring_file = None
         if 'tailoring' in data:
             parser = XccdfYamlTailoringParser(generator, self.basedir,
                                               self.workdir)
             parser.parse(data['tailoring'])
-            parser.export(output_dir=output_dir, output_file=output_file,
-                          unescape=unescape)
+            tailoring_file = parser.export(
+                output_dir=output_dir, output_file=output_file,
+                unescape=unescape)
+
+        return benchmark_file, tailoring_file
 
     def validate(self, filename=None, schema_type='auto', schema='',
                  skip_valid=False, **kwargs):

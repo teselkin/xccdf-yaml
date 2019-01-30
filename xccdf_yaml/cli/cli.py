@@ -32,22 +32,25 @@ class CliConvertYaml(Command):
     def take_action(self, parsed_args):
         APPDATA['basedir'] = os.path.dirname(parsed_args.filename)
         xccdf_yaml = XccdfYaml()
-        xccdf_doc = xccdf_yaml.convert(**vars(parsed_args))
+        benchmark_file, tailoring_file = \
+            xccdf_yaml.convert(**vars(parsed_args))
+
         if parsed_args.schema:
             xccdf_yaml.validate(
-                filename=xccdf_doc,
+                filename=benchmark_file,
                 schema=parsed_args.schema,
                 skip_valid=parsed_args.skip_valid,
             )
+
         if parsed_args.schematron:
             xccdf_yaml.schematron(
-                filename=xccdf_doc,
+                filename=benchmark_file,
                 schematron_file=parsed_args.schematron_file)
+
         if parsed_args.datastream:
-            xccdf_yaml.datastream(filename=xccdf_doc,
+            xccdf_yaml.datastream(filename=benchmark_file,
                                   skip_valid=parsed_args.skip_valid,
                                   output_file=parsed_args.datastream_file)
-        return xccdf_doc
 
 
 class CliLoadYaml(Command):

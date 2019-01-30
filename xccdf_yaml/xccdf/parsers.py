@@ -425,6 +425,8 @@ class XccdfYamlBenchmarkParser(XccdfYamlParser, StatusParserMixin):
 
         benchmark_xml = self.benchmark.xml()
         benchmark_xml_str = etree.tostring(benchmark_xml,
+                                           encoding='utf-8',
+                                           xml_declaration=True,
                                            pretty_print=True).decode()
 
         if unescape:
@@ -448,7 +450,6 @@ class XccdfYamlBenchmarkParser(XccdfYamlParser, StatusParserMixin):
             output_file = os.path.join(output_dir, output_file)
 
         with open(output_file, 'w') as f:
-            f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
             f.write(benchmark_xml_str)
 
         return output_file
@@ -514,6 +515,8 @@ class XccdfYamlTailoringParser(XccdfYamlParser, StatusParserMixin):
 
         benchmark_xml = self.tailoring.xml()
         benchmark_xml_str = etree.tostring(benchmark_xml,
+                                           encoding='utf-8',
+                                           xml_declaration=True,
                                            pretty_print=True).decode()
 
         if unescape:
@@ -528,7 +531,6 @@ class XccdfYamlTailoringParser(XccdfYamlParser, StatusParserMixin):
             output_file = os.path.join(output_dir, output_file)
 
         with open(output_file, 'w') as f:
-            f.write('<?xml version="1.0" encoding="UTF-8"?>\n')
             f.write(benchmark_xml_str)
 
         return output_file
