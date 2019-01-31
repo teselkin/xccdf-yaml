@@ -136,7 +136,7 @@ class XccdfYamlProfileParser(XccdfYamlParser, StatusParserMixin):
                     profile.selector(
                         'set-value',
                         self.generator.id('value', selector_params['idref']),
-                        value=selector_params['value'])
+                        value=selector_params.get('value', ''))
 
 
 class XccdfYamlValueParser(XccdfYamlParser):
