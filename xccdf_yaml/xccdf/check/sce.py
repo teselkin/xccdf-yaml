@@ -134,15 +134,14 @@ class ScriptCheckEngineParser(GenericParser):
                 raise Exception("Value referenced by id '{}' not found"
                                 .format(id))
 
-        if 'export' in metadata:
-            for item in metadata['export']:
-                if isinstance(item, dict):
-                    for value_id, export_name in item.items():
-                        value_xccdf_id = self.generator.id('value', value_id)
-                        check.check_export(value_id=value_xccdf_id,
-                                           export_name=export_name)
-                else:
-                    export_name = re.sub(r'[^\w\d]', '_', item).upper()
-                    value_xccdf_id = self.generator.id('value', item)
-                    check.check_export(value_id=value_xccdf_id,
-                                       export_name=export_name)
+        for item in check_metadata.get('values', []):
+            if isinstance(item, dict):
+                value_id = next(iter(item))
+                export_name = item[value_id].upper()
+            else:
+                value_id = item
+                export_name = re.sub(r'[^\w\d]', '_', item).upper()
+
+            value_xccdf_id = self.generator.id('value', value_id)
+            check.check_export(value_id=value_xccdf_id,
+                               export_name=export_name)
