@@ -163,7 +163,7 @@ class XccdfYamlValueParser(XccdfYamlParser):
         self.append(value)
 
     def _parse(self, value_obj, data):
-        value = data.get('value')
+        value_str = data.get('value', '')
         value_type = data.get('type', 'string')
 
         if 'title' in data:
@@ -173,16 +173,16 @@ class XccdfYamlValueParser(XccdfYamlParser):
             value_obj.set_description(data['description'])
         else:
             if value_type == 'code':
-                value_obj.set_description(value, plaintext=True)
+                value_obj.set_description(value_str, plaintext=True)
 
         if value_type == 'code':
             value_obj.set_attr('type', 'string')
-            value = textwrap.fill(base64.b64encode(
-                zlib.compress(value.encode())).decode(), 120)
+            value_str = textwrap.fill(base64.b64encode(
+                zlib.compress(value_str.encode())).decode(), 120)
         else:
             value_obj.set_attr('type', value_type)
 
-        value_obj.set('value', value)
+        value_obj.set('value', value_str)
 
         for key in ['operator', ]:
             if key in data:
@@ -192,8 +192,8 @@ class XccdfYamlValueParser(XccdfYamlParser):
             item = data.get(key)
             if isinstance(item, list):
                 for x in item:
-                    for selector, value in x.items():
-                        value_obj.set(key, value, selector=selector)
+                    for selector, value_str in x.items():
+                        value_obj.set(key, value_str, selector=selector)
             elif item is not None:
                 value_obj.set(key, str(item))
 
