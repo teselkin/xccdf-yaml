@@ -2,6 +2,7 @@ import datetime
 import re
 
 from collections import namedtuple, OrderedDict
+from enum import Enum
 from xccdf_yaml.xml import XmlCommon
 from xccdf_yaml.xml import DublinCoreElementBase
 from xccdf_yaml.markdown import MarkdownHtml
@@ -14,6 +15,37 @@ NSMAP = {
     'sceres': "http://open-scap.org/page/SCE_result_file",
     'xsi': "http://www.w3.org/2001/XMLSchema-instance",
 }
+
+
+class XccdfBoolean(Enum):
+    TRUE = True
+    FALSE = False
+
+    @classmethod
+    def parse(cls, value):
+        if isinstance(value, bool):
+            return cls.TRUE if value is True else cls.FALSE
+
+        if isinstance(value, str):
+            if value.isnumeric():
+                value = int(value)
+            else:
+                value = value.lower()
+                if re.match(r'^(y(es)?|true)$', value):
+                    return cls.TRUE
+                if re.match(r'^(n(o)?|false)$', value):
+                    return cls.FALSE
+
+        if isinstance(value, int):
+            return cls.TRUE if value > 0 else cls.FALSE
+
+        raise Exception("Can't convert '{}' to True / False".format(value))
+
+    def __bool__(self):
+        return self.value is True
+
+    def __str__(self):
+        return 'true' if self.value else 'false'
 
 
 class XmlBase(XmlCommon):
@@ -105,6 +137,7 @@ class XccdfBenchmarkElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
         self._profiles = OrderedDict()
         self._groups = OrderedDict()
         self._values = OrderedDict()
+        self._rules = OrderedDict()
         self._dc_metadata = None
         self._version = XccdfVersionElement(self.xccdf, version)
         self._status = []
@@ -138,14 +171,31 @@ class XccdfBenchmarkElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
         self._profiles.setdefault(item.get_attr('id'), item)
         return self
 
+    def profile(self, id):
+        return self._profiles[id]
+
     def get_profile(self, id):
         return self._profiles.get(id)
 
     def new_profile(self, id):
         return self._profiles.setdefault(id, self.xccdf.profile(id))
 
+    def append_group(self, item):
+        self._groups.setdefault(item.get_attr('id'), item)
+        return self
+
+    def group(self, id):
+        return self._groups[id]
+
+    def get_group(self, id):
+        return self._groups.get(id)
+
     def new_group(self, id):
         return self._groups.setdefault(id, self.xccdf.group(id))
+
+    def append_rule(self, item):
+        self._rules.setdefault(item.get_attr('id'), item)
+        return self
 
     def append_value(self, item):
         self._values.setdefault(item.get_attr('id'), item)
@@ -188,6 +238,10 @@ class XccdfBenchmarkElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
 
         self.remove_elements(name='Group')
         for x in self._groups.values():
+            self.append(x)
+
+        self.remove_elements(name='Rule')
+        for x in self._rules.values():
             self.append(x)
 
 
@@ -278,12 +332,12 @@ class XccdfProfileElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
     def selector(self, selector, idref, **kwargs):
         key = self.SelectorKey(selector, idref)
         if selector == 'select':
-            self._selectors[key] = kwargs['selected']
+            self._selectors[key] = XccdfBoolean.parse(kwargs['selected'])
         elif selector == 'set-value':
             self._selectors[key] = kwargs['value']
         return self
 
-    def append_rule(self, rule, selected=False):
+    def select_item(self, rule, selected=False):
         return self.selector('select', rule.get_attr('id'), selected=selected)
 
     def update_elements(self):
@@ -298,8 +352,7 @@ class XccdfProfileElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
             if key.selector == 'select':
                 self.sub_element('select') \
                     .set_attr('idref', key.idref) \
-                    .set_attr('selected', {True: '1', False: '0'}
-                              .get(value, '0'))
+                    .set_attr('selected', str(value))
             elif key.selector == 'set-value':
                 self.sub_element('set-value') \
                     .set_attr('idref', key.idref) \
@@ -316,7 +369,18 @@ class XccdfGroupElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
         super().__init__('Group')
         self.xccdf = xccdf
         self.set_attr('id', self.xccdf.id('group', id))
+        self._selected = XccdfBoolean.FALSE
         self._rules = []
+        self._profiles = OrderedDict()
+
+    @property
+    def profiles(self):
+        return self._profiles.items()
+
+    def add_to_profile(self, name, selected=False):
+        profile = self._profiles.setdefault(name, {})
+        profile['selected'] = selected
+        return self
 
     def append_rule(self, rule):
         self._rules.append(rule)
@@ -327,7 +391,12 @@ class XccdfGroupElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
         self._rules.append(rule)
         return rule
 
+    def selected(self, selected=True):
+        self._selected = XccdfBoolean.parse(selected)
+
     def update_elements(self):
+        self.set_attr('selected', str(self._selected))
+
         self.remove_elements(name='Rule')
         for x in self._rules:
             self.append(x)
@@ -343,16 +412,17 @@ class XccdfRuleElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
         'check',
     )
 
-    def __init__(self, xccdf, id, selected=False, severity='medium'):
+    def __init__(self, xccdf, id, severity='medium'):
         super().__init__('Rule')
         self.xccdf = xccdf
         self.set_attr('id', self.xccdf.id('rule', id))
-        self.set_attr('selected', {True: '1', False: '0'}.get(selected, '0'))
         self.set_attr('severity', severity)
+        self._selected = XccdfBoolean.FALSE
         self._checks = []
         self._references = []
         self._dc_references = []
         self._profiles = {}
+        self.group = None
 
     @property
     def profiles(self):
@@ -391,7 +461,12 @@ class XccdfRuleElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
             .set_text(str(MarkdownHtml(text)))
         return self
 
+    def selected(self, selected=True):
+        self._selected = XccdfBoolean.parse(selected)
+
     def update_elements(self):
+        self.set_attr('selected', str(self._selected))
+
         self.remove_elements(name='check')
         for x in self._checks:
             self.append(x)
@@ -399,6 +474,7 @@ class XccdfRuleElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
         self.remove_elements(name='reference')
         for x in self._references:
             self.append(x)
+
         for x in self._dc_references:
             self.append(x)
 

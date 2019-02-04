@@ -131,12 +131,44 @@ class XccdfYamlProfileParser(XccdfYamlParser, StatusParserMixin):
                         self.generator.id(
                             selector_params.get('target', 'rule'),
                             selector_params['idref']),
-                        selected=selector_params['selected'])
+                        selected=selector_params.get('selected', False))
                 elif selector_name == 'set-value':
                     profile.selector(
                         'set-value',
                         self.generator.id('value', selector_params['idref']),
                         value=selector_params.get('value', ''))
+
+
+class XccdfYamlGroupParser(XccdfYamlParser, StatusParserMixin):
+    def parse(self, data):
+        group = self.generator.group(data['id'])
+        self._parse(group, data)
+        self.append(group)
+
+    def _parse(self, group, data):
+        """
+        id: <group id>
+        title: ''
+        description: ''
+        selected: True
+        profiles:
+          - id: <profile id>
+            selected: true | false
+        """
+
+        if 'title' in data:
+            group.set_title(data['title'])
+
+        if 'description' in data:
+            group.set_description(data['description'])
+
+        group.selected(data.get('selected', True))
+
+        for profile in data.get('profiles', []):
+            group.add_to_profile(
+                name=profile['id'],
+                selected=profile.get('selected', True)
+            )
 
 
 class XccdfYamlValueParser(XccdfYamlParser):
@@ -258,6 +290,15 @@ class XccdfYamlRuleParser(XccdfYamlParser):
                 else:
                     ref.sub_element(element_name).set_text(element_value)
 
+        group = data.get('group')
+
+        # If rule belongs to a group it should be selected by default
+        selected = group is not None
+        selected = data.get('selected', selected)
+
+        rule.group = group
+        rule.selected(selected)
+
         for profile in data.get('profiles', []):
             rule.add_to_profile(
                 name=profile['id'],
@@ -374,14 +415,13 @@ class XccdfYamlBenchmarkParser(XccdfYamlParser, StatusParserMixin):
 
         # Import groups
 
-        group_info = data.get('group', {
-            'id': 'default',
-            'title': 'Default Group'
-        })
+        group_parser = XccdfYamlGroupParser(self.generator, benchmark)
 
-        group = self.benchmark\
-            .new_group(group_info.get('id'))\
-            .set_title(group_info.get('title'))
+        for group_data in data.get('groups', []):
+            group_parser.parse(group_data)
+
+        for group in group_parser:
+            self.benchmark.append_group(group)
 
         # Import values
 
@@ -409,16 +449,35 @@ class XccdfYamlBenchmarkParser(XccdfYamlParser, StatusParserMixin):
             rule_parser.parse(rule_data)
 
         for rule in rule_parser:
-            group.append_rule(rule)
-            if default_profile:
-                default_profile.append_rule(rule, selected=True)
+            if rule.group:
+                group = benchmark.group(
+                    self.generator.id('group', rule.group)
+                )
+                group.append_rule(rule)
             else:
-                for profile_name, profile_data in rule.profiles:
-                    profile = benchmark.get_profile(
+                group = None
+                benchmark.append_rule(rule)
+
+            if group:
+                profile = None
+                for profile_name, profile_data in group.profiles:
+                    profile = benchmark.profile(
                         self.generator.id('profile', profile_name))
-                    if profile:
-                        profile.append_rule(
-                            rule, selected=profile_data.get('selected', False))
+                    profile.select_item(
+                        group, selected=profile_data.get('selected', False))
+
+                if profile is None and default_profile:
+                    default_profile.select_item(group, selected=True)
+            else:
+                profile = None
+                for profile_name, profile_data in rule.profiles:
+                    profile = benchmark.profile(
+                        self.generator.id('profile', profile_name))
+                    profile.select_item(
+                        rule, selected=profile_data.get('selected', False))
+
+                if profile is None and default_profile:
+                    default_profile.select_item(rule, selected=True)
 
     def export(self, output_dir, output_file=None, unescape=False):
         self.shared_files.export(output_dir)

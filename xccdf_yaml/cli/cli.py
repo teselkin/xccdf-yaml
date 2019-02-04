@@ -169,25 +169,25 @@ class CliTestXccdf(Command):
         check = rule.add_check()
         check.check_content_ref(href="mos-ubuntu1604-oval.xml",
                                 name="oval:mos-etc_os_release_does_not_match_Xerus:def:1")
-        profile.append_rule(rule, selected=True)
+        profile.select_item(rule, selected=True)
 
         rule = group.add_rule('bin_dash_has_mode_0755')
         check = rule.add_check()
         check.check_content_ref(href="mos-ubuntu1604-oval.xml",
                                 name="oval:mos-bin_dash_has_mode_0755:def:1")
-        profile.append_rule(rule, selected=True)
+        profile.select_item(rule, selected=True)
 
         rule = group.add_rule('aide_is_installed')
         check = rule.add_check()
         check.check_content_ref(href="mos-ubuntu1604-oval.xml",
                                 name="oval:mos-aide_is_installed:def:1")
-        profile.append_rule(rule, selected=True)
+        profile.select_item(rule, selected=True)
 
         rule = group.add_rule('sysctl_vm_laptop_mode_1')
         check = rule.add_check()
         check.check_content_ref(href="mos-ubuntu1604-oval.xml",
                                 name="oval:mos-sysctl_vm_laptop_mode_1:def:1")
-        profile.append_rule(rule, selected=True)
+        profile.select_item(rule, selected=True)
 
         return str(benchmark)
 
