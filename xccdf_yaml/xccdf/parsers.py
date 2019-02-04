@@ -83,24 +83,24 @@ class XccdfYamlProfileParser(XccdfYamlParser, StatusParserMixin):
           - ''
         selectors:
           - select:
-              idref: <item id>
+              id: <item id>
               target: rule | ???
               selected: true | false
               remark:
                 - ''
           - set-value:
-              idref: <item id>
+              id: <item id>
               value: <item value>
           - set-complex-value:
-              idref: <item id>
+              id: <item id>
               value: <item value>
           - refine-value:
-              idref: <item id>
+              id: <item id>
               remark:
                 - ''
               selector:
           - refine-rule:
-              idref: <item id>
+              id: <item id>
               value: <item value>
         """
 
@@ -130,12 +130,12 @@ class XccdfYamlProfileParser(XccdfYamlParser, StatusParserMixin):
                         'select',
                         self.generator.id(
                             selector_params.get('target', 'rule'),
-                            selector_params['idref']),
+                            selector_params['id']),
                         selected=selector_params.get('selected', False))
                 elif selector_name == 'set-value':
                     profile.selector(
                         'set-value',
-                        self.generator.id('value', selector_params['idref']),
+                        self.generator.id('value', selector_params['id']),
                         value=selector_params.get('value', ''))
 
 
