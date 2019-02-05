@@ -302,6 +302,7 @@ class XccdfProfileElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
     __elements_order__ = (
         'title',
         'description',
+        'platform',
         'status',
         'select',
         'set-value',
@@ -316,6 +317,16 @@ class XccdfProfileElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
         self.set_attr('id', self.xccdf.id('profile', id))
         self._selectors = OrderedDict()
         self._status = []
+        self._platforms = set()
+
+    @property
+    def platforms(self):
+        return self._platforms
+
+    def add_platform(self, name):
+        self._platforms.add(name)
+        # self.sub_element('platform').set_attr('idref', name)
+        return self
 
     def set_status(self, status='draft', status_date=None):
         self._status.append(XccdfStatusElement(status=status,
@@ -343,6 +354,10 @@ class XccdfProfileElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
     def update_elements(self):
         self.remove_elements(name='select')
         self.remove_elements(name='set-value')
+
+        self.remove_elements(name='platform')
+        for x in self._platforms:
+            self.sub_element('platform').set_attr('idref', x)
 
         self.remove_elements(name='status')
         for x in self._status:

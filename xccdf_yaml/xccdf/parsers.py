@@ -123,6 +123,9 @@ class XccdfYamlProfileParser(XccdfYamlParser, StatusParserMixin):
         if 'description' in data:
             profile.set_description(data['description'])
 
+        for platform in data.get('platforms', []):
+            profile.add_platform(platform.rstrip())
+
         for item in data.get('selectors', []):
             for selector_name, selector_params in item.items():
                 if selector_name == 'select':
@@ -162,7 +165,7 @@ class XccdfYamlGroupParser(XccdfYamlParser, StatusParserMixin):
         if 'description' in data:
             group.set_description(data['description'])
 
-        group.selected(data.get('selected', True))
+        group.selected(data.get('selected', False))
 
         for profile in data.get('profiles', []):
             group.add_to_profile(
