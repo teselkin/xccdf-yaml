@@ -1,4 +1,5 @@
 from xccdf_yaml.xccdf.check.common import GenericParser
+from itertools import chain
 
 import re
 import base64
@@ -124,7 +125,8 @@ class ScriptCheckEngineParser(GenericParser):
         check.check_export(value.get_attr('id'), 'CODEBLOCK')
 
         index = 0
-        for id in check_metadata.get('include', []):
+        for id in chain(check_metadata.get('snippets', []),
+                        check_metadata.get('include', [])):
             value = self.benchmark.get_value(self.generator.id('value', id))
             if value:
                 index += 1

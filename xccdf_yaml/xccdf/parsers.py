@@ -9,7 +9,7 @@ import lxml.etree as etree
 
 from collections import OrderedDict
 from xccdf_yaml.common import SharedFiles
-from xccdf_yaml.misc import unlist
+from xccdf_yaml.misc import unlist, deepmerge
 # from xccdf_yaml.xccdf.elements import XccdfGenerator
 
 from xccdf_yaml.oval.parsers import PARSERS as OVAL_PARSERS
@@ -36,10 +36,14 @@ class StatusParserMixin(object):
 
 
 class XccdfYamlParser(object):
-    def __init__(self, generator, benchmark=None):
+    def __init__(self, generator, benchmark=None, default=None):
         self._items = OrderedDict()
         self.generator = generator
         self.benchmark = benchmark
+        if default:
+            self.default = default
+        else:
+            self.default = {}
 
     def __len__(self):
         return len(self._items)
@@ -198,6 +202,8 @@ class XccdfYamlValueParser(XccdfYamlParser):
         self.append(value)
 
     def _parse(self, value_obj, data):
+        data = deepmerge(self.default, data)
+
         value_str = data.get('value', '')
         value_type = data.get('type', 'string')
 
@@ -356,6 +362,9 @@ class XccdfYamlBenchmarkParser(XccdfYamlParser, StatusParserMixin):
     values:
       - <value data>
 
+    snippets:
+      - <snippet data>
+
     profiles:
       - <profile params>
 
@@ -426,13 +435,24 @@ class XccdfYamlBenchmarkParser(XccdfYamlParser, StatusParserMixin):
         for group in group_parser:
             self.benchmark.append_group(group)
 
-        # Import values
+        # Import values & snippets
 
         value_parser = XccdfYamlValueParser(self.generator, benchmark)
         for value_data in data.get('values', []):
             value_parser.parse(value_data)
 
+        snippet_default = {
+            'type': 'code'
+        }
+        snippet_parser = XccdfYamlValueParser(self.generator, benchmark,
+                                              default=snippet_default)
+        for snippet_data in data.get('snippets', []):
+            snippet_parser.parse(snippet_data)
+
         for value in value_parser:
+            benchmark.append_value(value)
+
+        for value in snippet_parser:
             benchmark.append_value(value)
 
         # Import shared files
