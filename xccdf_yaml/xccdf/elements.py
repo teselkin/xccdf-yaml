@@ -164,8 +164,8 @@ class XccdfBenchmarkElement(XccdfBase, SetTitleMixin, SetDescriptionMixin):
         self._values = OrderedDict()
         self._rules = OrderedDict()
         self._dc_metadata = None
-        self._version = XccdfVersionElement(self.xccdf, version)
         self._status = []
+        self.version = version
 
     @property
     def platforms(self):
@@ -183,8 +183,8 @@ class XccdfBenchmarkElement(XccdfBase, SetTitleMixin, SetDescriptionMixin):
         return self
 
     def set_version(self, version=None):
-        if version:
-            self._version = XccdfVersionElement(self.xccdf, version)
+        if version is not None:
+            self.version = str(version)
         return self
 
     def add_platform(self, name):
@@ -249,7 +249,7 @@ class XccdfBenchmarkElement(XccdfBase, SetTitleMixin, SetDescriptionMixin):
             self.append(self._dc_metadata)
 
         self.remove_elements(name='version')
-        self.append(self._version)
+        self.append(XccdfVersionElement(self.xccdf, self.version))
 
         self.remove_elements(name='status')
         for x in self._status:
@@ -282,8 +282,8 @@ class XccdfTailoringElement(XccdfBase):
     def __init__(self, xccdf, id, version='0.1'):
         super().__init__(generator=xccdf, name='Tailoring', id=id)
         self._profiles = OrderedDict()
-        self._version = XccdfVersionElement(self.xccdf, version)
         self._status = []
+        self.version = version
 
     def append_profile(self, item):
         self._profiles.setdefault(item.xccdf_id, item)
@@ -304,8 +304,8 @@ class XccdfTailoringElement(XccdfBase):
         return self
 
     def set_version(self, version=None):
-        if version:
-            self._version = XccdfVersionElement(self.xccdf, version)
+        if version is not None:
+            self.version = str(version)
         return self
 
     def update_elements(self):
@@ -316,7 +316,7 @@ class XccdfTailoringElement(XccdfBase):
             self.append(x)
 
         self.remove_elements(name='version')
-        self.append(self._version)
+        self.append(XccdfVersionElement(self.xccdf, self.version))
 
         self.remove_elements(name='status')
         for x in self._status:
