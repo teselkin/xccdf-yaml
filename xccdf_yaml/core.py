@@ -53,8 +53,8 @@ class XccdfYaml(object):
         oval.extend_states(result.states)
         oval.append_variable(result.variable)
 
-    def convert(self, filename=None, output_dir=None, output_file=None,
-                unescape=False, **kwargs):
+    def convert(self, filename=None, output_dir=None, output_basedir=None,
+                output_file=None, unescape=False, **kwargs):
         self.basedir = os.path.dirname(filename)
         generator = XccdfGenerator('mirantis.com')
         data = yaml.load(open(filename), YamlLoader)
@@ -65,8 +65,8 @@ class XccdfYaml(object):
                                               self.workdir)
             parser.parse(data['benchmark'])
             benchmark_file = parser.export(
-                output_dir=output_dir, output_file=output_file,
-                unescape=unescape)
+                output_basedir=output_basedir, output_dir=output_dir,
+                output_file=output_file, unescape=unescape)
 
         tailoring_file = None
         if 'tailoring' in data:
@@ -74,8 +74,8 @@ class XccdfYaml(object):
                                               self.workdir)
             parser.parse(data['tailoring'])
             tailoring_file = parser.export(
-                output_dir=output_dir, output_file=output_file,
-                unescape=unescape)
+                output_basedir=output_basedir, output_dir=output_dir,
+                output_file=output_file, unescape=unescape)
 
         return benchmark_file, tailoring_file
 
