@@ -137,7 +137,7 @@ class TextfilecontentParser(GenericParser):
 
         criteria = definition.add_criteria()
         for test in res.tests:
-            criterion = Criterion(test.xccdf_id)
+            criterion = Criterion(test.get_attr('id'))
             criteria.add_criterion(criterion)
         res.definition = definition
         return res

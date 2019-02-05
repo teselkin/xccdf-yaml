@@ -57,27 +57,27 @@ class OvalDefinitions(XmlBase):
 
     def append_definition(self, item):
         if item:
-            self._definitions.setdefault(item.xccdf_id, item)
+            self._definitions.setdefault(item.get_attr('id'), item)
         return self
 
     def append_test(self, item):
         if item:
-            self._tests.setdefault(item.xccdf_id, item)
+            self._tests.setdefault(item.get_attr('id'), item)
         return self
 
     def append_object(self, item):
         if item:
-            self._objects.setdefault(item.xccdf_id, item)
+            self._objects.setdefault(item.get_attr('id'), item)
         return self
 
     def append_state(self, item):
         if item:
-            self._states.setdefault(item.xccdf_id, item)
+            self._states.setdefault(item.get_attr('id'), item)
         return self
 
     def append_variable(self, item):
         if item:
-            self._variables.setdefault(item.xccdf_id, item)
+            self._variables.setdefault(item.get_attr('id'), item)
         return self
 
     def extend_definitions(self, items):
@@ -301,12 +301,12 @@ class OvalTest(XmlBase):
         self.remove_elements(name='object')
         for x in self._objects:
             self.sub_element('object')\
-                .set_attr('object_ref', x.xccdf_id)
+                .set_attr('object_ref', x.get_attr('id'))
 
         self.remove_elements(name='state')
         for x in self._states:
             self.sub_element('state')\
-                .set_attr('state_ref', x.xccdf_id)
+                .set_attr('state_ref', x.get_attr('id'))
 
 
 class OvalObject(XmlBase):
