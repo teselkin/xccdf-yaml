@@ -189,7 +189,6 @@ class XccdfBenchmarkElement(XccdfBase, SetTitleMixin, SetDescriptionMixin):
 
     def add_platform(self, name):
         self._platforms.add(name)
-        # self.sub_element('platform').set_attr('idref', name)
         return self
 
     def append_profile(self, item):
@@ -350,7 +349,6 @@ class XccdfProfileElement(XccdfBase, SetTitleMixin, SetDescriptionMixin):
 
     def add_platform(self, name):
         self._platforms.add(name)
-        # self.sub_element('platform').set_attr('idref', name)
         return self
 
     def set_status(self, status='draft', status_date=None):

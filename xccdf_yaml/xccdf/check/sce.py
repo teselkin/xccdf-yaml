@@ -78,18 +78,13 @@ class ScriptCheckEngineParser(GenericParser):
         engine = check_metadata.get('engine', 'shell')
         entrypoint = check_metadata.get('entrypoint')
 
-        # if entrypoint:
-        #     self.shared_files.new(entrypoint).set_executable()
-
         if entrypoint is None:
             if engine == 'shell':
                 entrypoint = 'entrypoint.sh'
                 self.shared_files.new(entrypoint, content=SHELL_ENTRYPOINT)
-                # entrypoint_target = '{}.sh'.format(id)
             elif engine == 'python':
                 entrypoint = 'entrypoint.py'
                 self.shared_files.new(entrypoint, content=PYTHON_ENTRYPOINT)
-                # entrypoint_target = '{}.py'.format(id)
             else:
                 raise Exception("Unsupported engine {}".format(engine))
 
@@ -99,13 +94,6 @@ class ScriptCheckEngineParser(GenericParser):
             .check_import(import_name='stdout')\
             .check_import(import_name='stderr')\
             .check_content_ref(href=entrypoint)
-
-        # value = self.benchmark.new_value(
-        #     '{}-entrypoint'.format(rule.get_attr('id')))\
-        #     .set_value(entrypoint_target)
-        # check.check_export(value.get_attr('id'), 'ENTRYPOINT')
-        # self.add_shared_file(entrypoint_target,
-        #                      content=check_metadata['codeblock'])
 
         codeblock = check_metadata['codeblock']
         if engine == 'python':
