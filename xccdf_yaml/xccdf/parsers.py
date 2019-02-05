@@ -10,7 +10,7 @@ import lxml.etree as etree
 from collections import OrderedDict
 from xccdf_yaml.common import SharedFiles
 from xccdf_yaml.misc import unlist, deepmerge
-# from xccdf_yaml.xccdf.elements import XccdfGenerator
+from xccdf_yaml.appdata import APPDATA
 
 from xccdf_yaml.oval.parsers import PARSERS as OVAL_PARSERS
 from xccdf_yaml.xccdf.check import PARSERS as XCCDF_PARSERS
@@ -58,8 +58,7 @@ class XccdfYamlParser(object):
             yield item
 
     def append(self, item):
-        item_id = item.get_attr('id')
-        self._items.setdefault(item_id, item)
+        self._items.setdefault(item.xccdf_id, item)
 
 
 class XccdfYamlProfileParser(XccdfYamlParser, StatusParserMixin):
@@ -385,6 +384,9 @@ class XccdfYamlBenchmarkParser(XccdfYamlParser, StatusParserMixin):
         benchmark.set_title(data.get('title'))
         benchmark.set_description(data.get('description'))
 
+        if 'version' in data:
+            benchmark.set_version(data['version'])
+
         for status in self._parse_status(
                 data.get('status', [{'value': 'draft'}, ])):
             benchmark.append_status(status)
@@ -502,7 +504,16 @@ class XccdfYamlBenchmarkParser(XccdfYamlParser, StatusParserMixin):
                 if profile is None and default_profile:
                     default_profile.select_item(rule, selected=True)
 
-    def export(self, output_dir, output_file=None, unescape=False):
+    def export(self, output_basedir=None, output_dir=None, output_file=None,
+               unescape=False):
+        if output_dir is None:
+            if output_basedir is None:
+                output_basedir = os.path.join(APPDATA['workdir'], 'output')
+            output_dir = os.path.join(output_basedir,
+                                      self.benchmark.id,
+                                      self.benchmark.version)
+        os.makedirs(output_dir, exist_ok=True)
+
         self.shared_files.export(output_dir)
 
         benchmark_xml = self.benchmark.xml()
@@ -526,8 +537,7 @@ class XccdfYamlBenchmarkParser(XccdfYamlParser, StatusParserMixin):
         if output_file is None:
             output_file = os.path.join(
                 output_dir,
-                '{}-xccdf.xml'.format(self.benchmark.get_attr('id'))
-            )
+                '{}-xccdf.xml'.format(self.benchmark.xccdf_id))
         else:
             output_file = os.path.join(output_dir, output_file)
 
@@ -590,7 +600,14 @@ class XccdfYamlTailoringParser(XccdfYamlParser, StatusParserMixin):
         for profile in profile_parser:
             self.tailoring.append_profile(profile)
 
-    def export(self, output_dir, output_file=None, unescape=False):
+    def export(self, output_basedir=None, output_dir=None, output_file=None,
+               unescape=False):
+        if output_dir is None:
+            if output_basedir is None:
+                output_basedir = os.path.join(APPDATA['workdir'], 'output')
+            output_dir = os.path.join(output_basedir,
+                                      self.tailoring.id,
+                                      self.tailoring.version)
         os.makedirs(output_dir, exist_ok=True)
 
         self.shared_files.export(output_dir)
@@ -607,8 +624,7 @@ class XccdfYamlTailoringParser(XccdfYamlParser, StatusParserMixin):
         if output_file is None:
             output_file = os.path.join(
                 output_dir,
-                '{}-xccdf.xml'.format(self.tailoring.get_attr('id'))
-            )
+                '{}-xccdf.xml'.format(self.tailoring.xccdf_id))
         else:
             output_file = os.path.join(output_dir, output_file)
 

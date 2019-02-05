@@ -53,6 +53,32 @@ class XmlBase(XmlCommon):
         super().__init__(name, ns=ns, nsmap=NSMAP)
 
 
+class XccdfBase(XmlBase):
+    def __init__(self, generator, name, id=None, ns=None):
+        super().__init__(name, ns=ns)
+        self._id = id
+        self._xccdf_id = None
+        self._generator = generator
+
+    @property
+    def id(self):
+        return self._id
+
+    @property
+    def xccdf(self):
+        return self._generator
+
+    @property
+    def xccdf_id(self):
+        if self._xccdf_id is None:
+            self._xccdf_id = self._generator.id(self._name, self._id)
+        return self._xccdf_id
+
+    def update_elements(self):
+        super().update_elements()
+        self.set_attr('id', self.xccdf_id)
+
+
 class XccdfDublinCoreElement(DublinCoreElementBase):
     def __init__(self, name):
         super().__init__(name, nsmap=NSMAP)
@@ -115,7 +141,7 @@ class XccdfGenerator(object):
         return XccdfStatusElement(self, *args, **kwargs)
 
 
-class XccdfBenchmarkElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
+class XccdfBenchmarkElement(XccdfBase, SetTitleMixin, SetDescriptionMixin):
     __elements_order__ = (
         'status',
         'title',
@@ -130,9 +156,8 @@ class XccdfBenchmarkElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
     )
 
     def __init__(self, xccdf, id, version='0.1'):
-        super().__init__('Benchmark')
-        self.xccdf = xccdf
-        self.set_attr('id', self.xccdf.id('benchmark', id))
+        super().__init__(generator=xccdf, name='Benchmark', id=id)
+        self._id = id
         self._platforms = set()
         self._profiles = OrderedDict()
         self._groups = OrderedDict()
@@ -168,7 +193,7 @@ class XccdfBenchmarkElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
         return self
 
     def append_profile(self, item):
-        self._profiles.setdefault(item.get_attr('id'), item)
+        self._profiles.setdefault(item.xccdf_id, item)
         return self
 
     def profile(self, id):
@@ -181,7 +206,7 @@ class XccdfBenchmarkElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
         return self._profiles.setdefault(id, self.xccdf.profile(id))
 
     def append_group(self, item):
-        self._groups.setdefault(item.get_attr('id'), item)
+        self._groups.setdefault(item.xccdf_id, item)
         return self
 
     def group(self, id):
@@ -194,11 +219,11 @@ class XccdfBenchmarkElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
         return self._groups.setdefault(id, self.xccdf.group(id))
 
     def append_rule(self, item):
-        self._rules.setdefault(item.get_attr('id'), item)
+        self._rules.setdefault(item.xccdf_id, item)
         return self
 
     def append_value(self, item):
-        self._values.setdefault(item.get_attr('id'), item)
+        self._values.setdefault(item.xccdf_id, item)
         return self
 
     def new_value(self, id):
@@ -213,6 +238,8 @@ class XccdfBenchmarkElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
         return metadata
 
     def update_elements(self):
+        super().update_elements()
+
         self.remove_elements(name='platform')
         for x in self._platforms:
             self.sub_element('platform').set_attr('idref', x)
@@ -245,7 +272,7 @@ class XccdfBenchmarkElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
             self.append(x)
 
 
-class XccdfTailoringElement(XmlBase):
+class XccdfTailoringElement(XccdfBase):
     __elements_order__ = (
         'status',
         'version',
@@ -253,15 +280,13 @@ class XccdfTailoringElement(XmlBase):
     )
 
     def __init__(self, xccdf, id, version='0.1'):
-        super().__init__('Tailoring')
-        self.xccdf = xccdf
-        self.set_attr('id', self.xccdf.id('tailoring', id))
+        super().__init__(generator=xccdf, name='Tailoring', id=id)
         self._profiles = OrderedDict()
         self._version = XccdfVersionElement(self.xccdf, version)
         self._status = []
 
     def append_profile(self, item):
-        self._profiles.setdefault(item.get_attr('id'), item)
+        self._profiles.setdefault(item.xccdf_id, item)
         return self
 
     def add_profile(self, id):
@@ -284,6 +309,8 @@ class XccdfTailoringElement(XmlBase):
         return self
 
     def update_elements(self):
+        super().update_elements()
+
         self.remove_elements(name='Profile')
         for x in self._profiles.values():
             self.append(x)
@@ -296,7 +323,7 @@ class XccdfTailoringElement(XmlBase):
             self.append(x)
 
 
-class XccdfProfileElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
+class XccdfProfileElement(XccdfBase, SetTitleMixin, SetDescriptionMixin):
     SelectorKey = namedtuple('Key', ['selector', 'idref'])
 
     __elements_order__ = (
@@ -312,9 +339,7 @@ class XccdfProfileElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
     )
 
     def __init__(self, xccdf, id):
-        super().__init__('Profile')
-        self.xccdf = xccdf
-        self.set_attr('id', self.xccdf.id('profile', id))
+        super().__init__(generator=xccdf, name='Profile', id=id)
         self._selectors = OrderedDict()
         self._status = []
         self._platforms = set()
@@ -349,9 +374,11 @@ class XccdfProfileElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
         return self
 
     def select_item(self, rule, selected=False):
-        return self.selector('select', rule.get_attr('id'), selected=selected)
+        return self.selector('select', rule.xccdf_id, selected=selected)
 
     def update_elements(self):
+        super().update_elements()
+
         self.remove_elements(name='select')
         self.remove_elements(name='set-value')
 
@@ -374,16 +401,14 @@ class XccdfProfileElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
                     .set_text(value)
 
 
-class XccdfGroupElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
+class XccdfGroupElement(XccdfBase, SetTitleMixin, SetDescriptionMixin):
     __elements_order__ = (
         'title',
         'description',
     )
 
     def __init__(self, xccdf, id):
-        super().__init__('Group')
-        self.xccdf = xccdf
-        self.set_attr('id', self.xccdf.id('group', id))
+        super().__init__(generator=xccdf, name='Group', id=id)
         self._selected = XccdfBoolean.FALSE
         self._rules = []
         self._profiles = OrderedDict()
@@ -410,6 +435,7 @@ class XccdfGroupElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
         self._selected = XccdfBoolean.parse(selected)
 
     def update_elements(self):
+        super().update_elements()
         self.set_attr('selected', str(self._selected))
 
         self.remove_elements(name='Rule')
@@ -417,7 +443,7 @@ class XccdfGroupElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
             self.append(x)
 
 
-class XccdfRuleElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
+class XccdfRuleElement(XccdfBase, SetTitleMixin, SetDescriptionMixin):
     __elements_order__ = (
         'title',
         'description',
@@ -428,9 +454,7 @@ class XccdfRuleElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
     )
 
     def __init__(self, xccdf, id, severity='medium'):
-        super().__init__('Rule')
-        self.xccdf = xccdf
-        self.set_attr('id', self.xccdf.id('rule', id))
+        super().__init__(generator=xccdf, name='Rule', id=id)
         self.set_attr('severity', severity)
         self._selected = XccdfBoolean.FALSE
         self._checks = []
@@ -480,6 +504,7 @@ class XccdfRuleElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
         self._selected = XccdfBoolean.parse(selected)
 
     def update_elements(self):
+        self.set_attr('id', self.xccdf_id)
         self.set_attr('selected', str(self._selected))
 
         self.remove_elements(name='check')
@@ -530,7 +555,7 @@ class XccdfCheckElement(XmlBase):
         return self
 
 
-class XccdfValueElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
+class XccdfValueElement(XccdfBase, SetTitleMixin, SetDescriptionMixin):
     __elements_order__ = (
         'title',
         'description',
@@ -542,16 +567,12 @@ class XccdfValueElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
     )
 
     def __init__(self, xccdf, id):
-        super().__init__('Value')
-        self.xccdf = xccdf
+        super().__init__(generator=xccdf, name='Value', id=id)
         self._value = OrderedDict()
         self._default_value = OrderedDict()
         self._match = OrderedDict()
         self._lower_bound = OrderedDict()
         self._upper_bound = OrderedDict()
-        self.set_attr('id', self.xccdf.id('value', id))
-        # self.set_title(self.get_attr('id'))
-        # self.set_description(self.get_attr('id'))
 
     def set_value(self, value, selector=None):
         if selector in self._value:
@@ -615,6 +636,8 @@ class XccdfValueElement(XmlBase, SetTitleMixin, SetDescriptionMixin):
         return self
 
     def update_elements(self):
+        super().update_elements()
+
         self.remove_elements(name='value')
         for x in self._value.values():
             self.append(x)

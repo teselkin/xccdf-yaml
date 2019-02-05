@@ -176,7 +176,7 @@ class InetlisteningserversParser(GenericParser):
         criteria = definition.add_criteria(operator=operator)
 
         for test in res.tests:
-            criterion = Criterion(test.get_attr('id'))
+            criterion = Criterion(test.xccdf_id)
             criteria.add_criterion(criterion)
         res.definition = definition
         return res

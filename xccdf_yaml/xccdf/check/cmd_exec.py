@@ -75,7 +75,7 @@ except:
 
 class CmdExecParser(GenericParser):
     def parse(self, rule, metadata):
-        id = rule.get_attr('id')
+        id = rule.xccdf_id
 
         if 'cmd' in metadata:
             self.shared_files.new('wrapper-head.sh',

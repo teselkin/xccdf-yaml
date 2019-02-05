@@ -74,7 +74,6 @@ except:
 
 class ScriptCheckEngineParser(GenericParser):
     def parse(self, rule, metadata):
-        id = rule.get_attr('id')
         check_metadata = metadata['check']
         engine = check_metadata.get('engine', 'shell')
         entrypoint = check_metadata.get('entrypoint')
@@ -119,10 +118,10 @@ class ScriptCheckEngineParser(GenericParser):
                 base64.b64encode(codeblock.encode()).decode(), 120)
 
         value = self.benchmark.new_value(
-            '{}-codeblock'.format(rule.get_attr('id')))\
+            '{}-codeblock'.format(rule.xccdf_id))\
             .set_value(compressed_codeblock)\
             .set_description(codeblock, plaintext=True)
-        check.check_export(value.get_attr('id'), 'CODEBLOCK')
+        check.check_export(value.xccdf_id, 'CODEBLOCK')
 
         index = 0
         for id in chain(check_metadata.get('snippets', []),
@@ -130,7 +129,7 @@ class ScriptCheckEngineParser(GenericParser):
             value = self.benchmark.get_value(self.generator.id('value', id))
             if value:
                 index += 1
-                check.check_export(value.get_attr('id'), 'INCLUDE_{}'
+                check.check_export(value.xccdf_id, 'INCLUDE_{}'
                                    .format(str(index).rjust(2, '0')))
             else:
                 raise Exception("Value referenced by id '{}' not found"
