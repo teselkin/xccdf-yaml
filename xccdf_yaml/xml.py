@@ -7,9 +7,9 @@ class XmlCommon(object):
     __elements__ = None
     __elements_order__ = None
 
-    def __init__(self, name, ns=None, nsmap={}):
+    def __init__(self, name, ns=None, nsmap=None):
         self._name = name
-        self._nsmap = nsmap
+        self._nsmap = nsmap or {}
         self._ns = ns
         self._children = OrderedDict()
         # Use OrderedDict for storing attributes to prevent changes in
