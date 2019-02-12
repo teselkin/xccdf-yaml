@@ -533,7 +533,7 @@ class XccdfYamlBenchmarkParser(XccdfYamlParser, StatusParserMixin):
         if output_file is None:
             output_file = os.path.join(
                 output_dir,
-                '{}-xccdf.xml'.format(self.benchmark.xccdf_id))
+                '{}-xccdf.xml'.format(self.benchmark.id))
         else:
             output_file = os.path.join(output_dir, output_file)
 
@@ -616,7 +616,7 @@ class XccdfYamlTailoringParser(XccdfYamlParser, StatusParserMixin):
         if output_file is None:
             output_file = os.path.join(
                 output_dir,
-                '{}-xccdf.xml'.format(self.tailoring.xccdf_id))
+                '{}-xccdf.xml'.format(self.tailoring.id))
         else:
             output_file = os.path.join(output_dir, output_file)
 
