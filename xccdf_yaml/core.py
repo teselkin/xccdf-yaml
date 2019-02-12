@@ -66,7 +66,7 @@ class XccdfYaml(object):
             parser.parse(data['benchmark'])
             benchmark_file = parser.export(
                 output_basedir=output_basedir, output_dir=output_dir,
-                output_file=output_file, unescape=unescape)
+                output_file=output_file)
 
         tailoring_file = None
         if 'tailoring' in data:
@@ -75,7 +75,7 @@ class XccdfYaml(object):
             parser.parse(data['tailoring'])
             tailoring_file = parser.export(
                 output_basedir=output_basedir, output_dir=output_dir,
-                output_file=output_file, unescape=unescape)
+                output_file=output_file)
 
         return benchmark_file, tailoring_file
 

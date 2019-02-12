@@ -403,9 +403,9 @@ class XccdfYamlBenchmarkParser(XccdfYamlParser, StatusParserMixin):
             for name, value_parser in dc_metadata.items():
                 if isinstance(value_parser, list):
                     for value in value_parser:
-                        metadata.sub_element(name).set_text(html.escape(value))
+                        metadata.sub_element(name).set_text(value)
                 else:
-                    metadata.sub_element(name).set_text(html.escape(value_parser))
+                    metadata.sub_element(name).set_text(value_parser)
 
         # Import profiles
 
@@ -504,8 +504,7 @@ class XccdfYamlBenchmarkParser(XccdfYamlParser, StatusParserMixin):
                 if profile is None and default_profile:
                     default_profile.select_item(rule, selected=True)
 
-    def export(self, output_basedir=None, output_dir=None, output_file=None,
-               unescape=False):
+    def export(self, output_basedir=None, output_dir=None, output_file=None):
         if output_dir is None:
             if output_basedir is None:
                 output_basedir = os.path.join(APPDATA['workdir'], 'output')
@@ -521,9 +520,6 @@ class XccdfYamlBenchmarkParser(XccdfYamlParser, StatusParserMixin):
                                            encoding='utf-8',
                                            xml_declaration=True,
                                            pretty_print=True).decode()
-
-        if unescape:
-            benchmark_xml_str = html.unescape(benchmark_xml_str)
 
         # if not oval.is_empty():
         #     oval_filename = os.path.join(output_dir, oval_ref)
@@ -600,8 +596,7 @@ class XccdfYamlTailoringParser(XccdfYamlParser, StatusParserMixin):
         for profile in profile_parser:
             self.tailoring.append_profile(profile)
 
-    def export(self, output_basedir=None, output_dir=None, output_file=None,
-               unescape=False):
+    def export(self, output_basedir=None, output_dir=None, output_file=None):
         if output_dir is None:
             if output_basedir is None:
                 output_basedir = os.path.join(APPDATA['workdir'], 'output')
@@ -617,9 +612,6 @@ class XccdfYamlTailoringParser(XccdfYamlParser, StatusParserMixin):
                                            encoding='utf-8',
                                            xml_declaration=True,
                                            pretty_print=True).decode()
-
-        if unescape:
-            benchmark_xml_str = html.unescape(benchmark_xml_str)
 
         if output_file is None:
             output_file = os.path.join(

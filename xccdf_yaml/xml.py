@@ -16,6 +16,7 @@ class XmlCommon(object):
         # attributes ordering on each convertion.
         self._attrs = OrderedDict()
         self._text = None
+        self._object = None
 
     def namespace(self, ns=None):
         return self._nsmap[ns]
@@ -67,6 +68,10 @@ class XmlCommon(object):
         self._text = text
         return self
 
+    def set_object(self, obj):
+        self._object = obj
+        return self
+
     def get_attr(self, name):
         return self._attrs.get(name)
 
@@ -90,7 +95,9 @@ class XmlCommon(object):
         element = etree.Element(self.tag(self._name), nsmap=self._nsmap)
         for key, value in self._attrs.items():
             element.set(key, value)
-        if self._text:
+        if self._object:
+            element.extend(self._object.xml())
+        elif self._text:
             element.text = self._text
         else:
             if self.__elements_order__ is None:
