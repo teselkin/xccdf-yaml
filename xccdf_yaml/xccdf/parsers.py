@@ -1,5 +1,5 @@
 import base64
-import html
+# import html
 import os
 import textwrap
 import zlib

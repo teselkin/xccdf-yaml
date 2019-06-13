@@ -495,7 +495,7 @@ class XccdfRuleElement(XccdfBase, SetTitleMixin, SetDescriptionMixin):
 
     def set_rationale(self, text):
         self.sub_element('rationale')\
-            .set_text(str(MarkdownHtml(text)))
+            .set_object(MarkdownHtml(text))
         return self
 
     def selected(self, selected=True):
